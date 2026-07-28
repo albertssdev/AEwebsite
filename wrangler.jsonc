@@ -20,6 +20,6 @@
     "crons": ["0 6 * * *"]
   },
   "vars": {
-    "GOOGLE_PLACE_ID": "REPLACE_ME"
+    "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c"
   }
 }
