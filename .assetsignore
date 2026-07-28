@@ -1,0 +1,6 @@
+wrangler.jsonc
+.assetsignore
+.wrangler/
+src/
+.dev.vars
+*.log

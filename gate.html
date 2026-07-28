@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex,nofollow">
+<title>Password Required</title>
+<link rel="stylesheet" href="assets/css/style.css" />
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--light); }
+  .gate-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 2rem; max-width: 320px; width: 100%; text-align: center; }
+  .gate-box input[type="password"] {
+    width: 100%; padding: 0.6rem; margin: 1rem 0; font-size: 1rem;
+    border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+  }
+  .gate-box button {
+    width: 100%; padding: 0.6rem; font-size: 1rem; background: var(--accent);
+    color: #fff; border: none; border-radius: 4px; cursor: pointer;
+  }
+  .gate-error { color: #b00020; font-size: 0.9rem; margin: 0 0 0.5rem; }
+</style>
+</head>
+<body>
+
+<div class="gate-box">
+  <h2>Password Required</h2>
+  <p id="gateError" class="gate-error" hidden>Incorrect password. Try again.</p>
+  <form method="POST" action="/gate-auth">
+    <input type="hidden" name="next" id="nextField" value="/">
+    <input type="password" name="password" placeholder="Password" autofocus required>
+    <button type="submit">Continue</button>
+  </form>
+</div>
+
+<script>
+  var params = new URLSearchParams(window.location.search);
+  var next = params.get("next") || "/";
+  document.getElementById("nextField").value = next;
+  if (params.get("error") === "1") {
+    document.getElementById("gateError").hidden = false;
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="description" content="LCRCC Missouri - Official website of the LCRCC Missouri Republican organization.">
+    <title>LCRCC Missouri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Inter:wght@400;500;600&amp;display=swap');
+        
+        :root {
+            --tw-color-primary: #002868;
+        }
+        
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        
+        .tail-container * {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .heading-font {
+            font-family: 'Libre Baskerville', serif;
+        }
+
+        .flag-banner {
+            background: url('usflag.jpg') center/cover no-repeat;
+            box-shadow: 0 10px 15px -3px rgb(0 40 104 / 0.3);
+        }
+
+        .tab-button {
+            position: relative;
+        }
+        
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #bf0a2f;
+            border-radius: 9999px;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            line-height: 1.05;
+        }
+
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 2.75rem;
+            }
+        }
+
+        /* Remove tiny squares / icons */
+        .fa-arrow-right,
+        .fa-paper-plane,
+        .fa-hand-holding-dollar,
+        .fa-arrow-up-right-from-square,
+        .fa-check {
+            display: none !important;
+        }
+		
+		/* Force Facebook widget to be truly 100% width (targets the real rendered elements) */
+	    .fb-page,
+	    .fb_iframe_widget,
+	    .fb_iframe_widget > span,
+	    .fb_iframe_widget iframe,
+	    .fb-page iframe {
+	        width: 100% !important;
+	        max-width: 100% !important;
+	        min-width: 100% !important;   /* extra safety */
+	    }
+	
+	    /* Optional: clean up any leftover borders/padding inside the widget */
+	    .fb_iframe_widget {
+	        display: block !important;
+	        overflow: hidden !important;
+	    }
+    </style>
+</head>
+<body class="tail-container">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-[#002868] text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#002868] text-3xl shadow-inner">
+                    <i class="fa-solid fa-eagle"></i>
+                </div>
+                <div>
+                    <h1 class="heading-font text-3xl tracking-tighter">LCRCC</h1>
+                    <p class="text-xs font-medium tracking-[2px] -mt-1 text-[#ffcc00]">MISSOURI</p>
+                </div>
+            </div>
+
+            <!-- Desktop Tabs -->
+            <div class="hidden md:flex items-center gap-x-8 text-sm font-semibold uppercase tracking-widest">
+                <button onclick="switchTab(0)" class="tab-button active flex items-center gap-x-2 hover:text-[#ffcc00]" id="tab-home">
+                    HOME
+                </button>
+                <button onclick="switchTab(1)" class="tab-button flex items-center gap-x-2 hover:text-[#ffcc00]" id="tab-email">
+                    EMAIL LIST
+                </button>
+                <button onclick="switchTab(2)" class="tab-button flex items-center gap-x-2 hover:text-[#ffcc00]" id="tab-contact">
+                    CONTACT US
+                </button>
+            </div>
+
+            <button onclick="toggleMobileMenu()" class="md:hidden text-2xl">
+                <i class="fa-solid fa-bars" id="mobile-icon"></i>
+            </button>
+
+            <div class="hidden md:flex items-center gap-x-4 text-xs">
+                <div class="flex items-center gap-x-1 bg-white/10 px-4 py-2 rounded-3xl">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="font-medium">Linneus, MO</span>
+                </div>
+                <a href="#" onclick="showDonateModal()" class="bg-[#bf0a2f] hover:bg-[#9c0826] px-6 py-2.5 rounded-3xl text-sm font-bold">
+                    DONATE
+                </a>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#002868] border-t border-white/20 px-6 py-4">
+            <div class="flex flex-col gap-y-4 text-sm font-semibold uppercase">
+                <button onclick="switchTab(0);toggleMobileMenu()" class="flex items-center gap-x-3 py-3 border-b border-white/10">
+                    HOME
+                </button>
+                <button onclick="switchTab(1);toggleMobileMenu()" class="flex items-center gap-x-3 py-3 border-b border-white/10">
+                    EMAIL LIST
+                </button>
+                <button onclick="switchTab(2);toggleMobileMenu()" class="flex items-center gap-x-3 py-3">
+                    CONTACT US
+                </button>
+                <a onclick="showDonateModal();toggleMobileMenu()" class="mt-4 bg-[#bf0a2f] text-center py-4 rounded-3xl text-white font-bold">
+                    DONATE TO LCRCC MISSOURI
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO BANNER - SOLID US FLAG -->
+    <div id="hero-banner" class="relative flag-banner h-72 md:h-96 flex items-center justify-center overflow-hidden">
+        
+        <!-- FULL-WIDTH OPAQUE STRIPE (left-to-right gradient) COMPLETELY REMOVED -->
+
+        <div class="relative z-10 max-w-7xl mx-auto px-6 text-center text-white">
+            <div class="inline-flex flex-col items-center gap-y-1 bg-white/20 backdrop-blur-md px-8 py-6 rounded-3xl mb-6 border border-white/30">
+                <h2 class="heading-font hero-title font-bold tracking-tighter drop-shadow-md text-black text-center">Linn County Republican Central Committee</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="max-w-7xl mx-auto px-6 pb-16">
+
+        <!-- HOME TAB CONTENT -->
+        <div id="content-home" class="tab-content">
+            <div class="mt-12">
+			
+            	<!-- Facebook Widget - Full Width, No Header, POSTS NOW FULL WIDTH -->
+				<div class="bg-white border border-gray-200 rounded-3xl shadow-sm w-full p-0 overflow-hidden">
+				    <div id="fb-root"></div>
+				    <div class="fb-page" 
+				         data-href="https://www.facebook.com/profile.php?id=61573316867817"
+				         data-width="" 
+				         data-height="650" 
+				         data-small-header="false"
+				         data-adapt-container-width="true"
+				         data-hide-cover="false"
+				         data-show-facepile="true"
+				         data-show-posts="true">
+				    </div>
+				</div>
+            </div>
+        </div>
+
+        <!-- EMAIL LIST TAB CONTENT -->
+        <div id="content-email" class="tab-content hidden">
+            <div class="max-w-2xl mx-auto mt-12 bg-white rounded-3xl shadow-xl border border-gray-100 p-10">
+                <div class="text-center mb-10">
+                    <div class="inline-flex bg-[#002868] text-white rounded-3xl px-6 py-2 text-sm font-semibold mb-4">JOIN THE MOVEMENT</div>
+                    <h2 class="heading-font text-5xl text-[#002868]">Get on the LCRCC Missouri Email List</h2>
+                    <p class="text-xl text-gray-600 mt-4">Receive updates on meetings, candidate endorsements, events, and ways to get involved. Never miss a beat.</p>
+                </div>
+
+                <form id="email-form" onsubmit="handleEmailSignup(event)" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">FULL NAME</label>
+                            <input type="text" id="name" required class="w-full px-6 py-5 rounded-3xl border border-gray-300 focus:border-[#002868] outline-none text-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">EMAIL ADDRESS</label>
+                            <input type="email" id="email" required class="w-full px-6 py-5 rounded-3xl border border-gray-300 focus:border-[#002868] outline-none text-lg">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">COUNTY (OPTIONAL)</label>
+                        <select id="county" class="w-full px-6 py-5 rounded-3xl border border-gray-300 focus:border-[#002868] outline-none text-lg">
+                            <option value="">Select your Missouri county...</option>
+                            <option value="Linn">Linn County</option>
+                            <option value="St. Louis">St. Louis County</option>
+                            <option value="St. Charles">St. Charles County</option>
+                            <option value="Other">Other County</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-x-4">
+                        <input type="checkbox" id="agree" checked class="w-5 h-5 accent-[#bf0a2f]">
+                        <label for="agree" class="text-sm">I agree to receive occasional emails from LCRCC Missouri. Unsubscribe anytime.</label>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#bf0a2f] hover:bg-[#9c0826] text-white font-bold text-xl py-6 rounded-3xl">
+                        SUBSCRIBE TO EMAIL LIST
+                    </button>
+                </form>
+
+                <p class="text-center text-xs text-gray-400 mt-8">🔒 Your information is safe and will only be used for official LCRCC communications.</p>
+            </div>
+        </div>
+
+        <!-- CONTACT US TAB CONTENT -->
+        <div id="content-contact" class="tab-content hidden">
+            <div class="mt-12">
+                <h2 class="heading-font text-5xl text-[#002868] mb-6">Get In Touch With LCRCC Missouri</h2>
+                <p class="text-xl text-gray-600 mb-8">Whether you're a candidate, volunteer, or concerned citizen, we want to hear from you. Missouri's future depends on engaged Republicans like you.</p>
+                
+                <!-- Email Address -->
+                <div class="mb-10">
+                    <div class="inline-flex items-center gap-x-3 bg-[#002868] text-white px-8 py-5 rounded-3xl">
+                        <div>
+                            <p class="font-medium text-sm">Email us directly at:</p>
+                            <a href="mailto:lcrccmo@gmail.com" class="text-[#ffcc00] hover:underline text-2xl font-semibold">lcrccmo@gmail.com</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="contact-form-container">
+                    <form id="contact-form" action="https://formsubmit.co/53aabc7410080c37c84221a58d66d657" method="POST" class="max-w-2xl bg-white rounded-3xl shadow-xl border border-gray-100 p-10">
+                        <input type="hidden" name="_subject" value="New Contact Message from LCRCC Missouri Website">
+                        <input type="hidden" name="_captcha" value="false">
+                        <input type="hidden" name="_template" value="table">
+                        <input type="hidden" name="_next" value="">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block mb-2 text-sm font-medium">YOUR NAME</label>
+                                <input type="text" name="name" id="contact-name" required class="w-full rounded-3xl border border-gray-300 px-6 py-5">
+                            </div>
+                            <div>
+                                <label class="block mb-2 text-sm font-medium">EMAIL ADDRESS</label>
+                                <input type="email" name="email" id="contact-email" required class="w-full rounded-3xl border border-gray-300 px-6 py-5">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">SUBJECT</label>
+                            <input type="text" name="subject" id="contact-subject" placeholder="Meeting inquiry, volunteer interest, etc." class="w-full rounded-3xl border border-gray-300 px-6 py-5">
+                        </div>
+                        
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">MESSAGE</label>
+                            <textarea name="message" id="contact-message" rows="6" required class="w-full rounded-3xl border border-gray-300 px-6 py-5 resize-y"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-[#002868] text-white font-bold py-6 rounded-3xl">
+                            SEND MESSAGE TO LCRCC
+                        </button>
+                    </form>
+                </div>
+
+                <p class="text-center text-xs text-gray-500 mt-8">Your message will be sent directly to lcrccmo@gmail.com</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-[#002868] text-white py-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-y-6">
+                <div class="heading-font text-3xl">LCRCC Missouri</div>
+                <div class="flex gap-x-8 text-sm font-medium">
+                    <a href="#" onclick="fakeLinkClick('Privacy Policy')" class="hover:text-[#ffcc00]">PRIVACY POLICY</a>
+                    <a href="#" onclick="fakeLinkClick('Missouri GOP')" class="hover:text-[#ffcc00]">MISSOURI GOP</a>
+                    <a href="#" onclick="fakeLinkClick('Volunteer')" class="hover:text-[#ffcc00]">BECOME A VOLUNTEER</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Donate Modal -->
+    <div onclick="if(event.target.id === 'donate-modal')hideDonateModal()" id="donate-modal" class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white rounded-3xl max-w-md w-full mx-4 p-8 text-center">
+            <h3 class="text-3xl font-semibold text-[#002868] mb-3">Support LCRCC Missouri</h3>
+            <p class="text-gray-600 mb-8">Every dollar helps us fight for conservative values in the Show-Me State.</p>
+            
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <button onclick="fakeDonate(25)" class="border-2 border-[#002868] text-[#002868] font-bold py-6 rounded-3xl">$25</button>
+                <button onclick="fakeDonate(50)" class="border-2 border-[#bf0a2f] bg-[#bf0a2f] text-white font-bold py-6 rounded-3xl">$50</button>
+                <button onclick="fakeDonate(100)" class="border-2 border-[#002868] text-[#002868] font-bold py-6 rounded-3xl">$100</button>
+            </div>
+            
+            <button onclick="fakeDonate('other')" class="w-full py-6 text-white bg-gradient-to-r from-[#002868] to-[#bf0a2f] rounded-3xl font-bold text-xl">
+                OTHER AMOUNT
+            </button>
+            
+            <p class="text-xs text-gray-400 mt-8">Thank you for standing with LCRCC Missouri!</p>
+            <button onclick="hideDonateModal()" class="mt-8 text-gray-400 text-sm">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Facebook SDK (required for the widget to display posts) -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v18.0"></script>
+
+    <script>
+        let currentTab = 0;
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        function switchTab(tabIndex) {
+            currentTab = tabIndex;
+            tabs.forEach((tab, index) => {
+                if (index === tabIndex) tab.classList.add('active');
+                else tab.classList.remove('active');
+            });
+            contents.forEach((content, index) => {
+                if (index === tabIndex) {
+                    content.classList.remove('hidden');
+                    content.classList.add('block');
+                } else {
+                    content.classList.add('hidden');
+                    content.classList.remove('block');
+                }
+            });
+
+            const hero = document.getElementById('hero-banner');
+            if (tabIndex === 0) {
+                hero.style.display = 'flex';
+            } else {
+                hero.style.display = 'none';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('mobile-icon');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.replace('fa-bars', 'fa-xmark');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.replace('fa-xmark', 'fa-bars');
+            }
+        }
+
+        function handleEmailSignup(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            
+            btn.style.transform = 'scale(0.95)';
+            btn.innerHTML = `SUBSCRIBED!`;
+            
+            setTimeout(() => {
+                alert("Thank you! You've been added to the LCRCC Missouri email list.");
+                btn.innerHTML = originalText;
+                btn.style.transform = 'scale(1)';
+                e.target.reset();
+            }, 1500);
+        }
+
+        // Contact form - prevent redirect and show success message
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            setTimeout(() => {
+                const container = document.getElementById('contact-form-container');
+                container.innerHTML = `
+                    <div class="max-w-2xl bg-white rounded-3xl shadow-xl border border-gray-100 p-12 text-center">
+                        <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                            <i class="fa-solid fa-check text-4xl text-green-600"></i>
+                        </div>
+                        <h3 class="text-3xl font-semibold text-[#002868] mb-3">Message Sent Successfully!</h3>
+                        <p class="text-gray-600 text-lg">We will be in touch soon!</p>
+                    </div>
+                `;
+            }, 600);
+        });
+
+        function fakeDonate(amount) {
+            hideDonateModal();
+            setTimeout(() => {
+                alert(`Thank you for your $${amount} donation to LCRCC Missouri! (Demo)`);
+            }, 300);
+        }
+
+        function fakeLinkClick(page) {
+            alert(`This would navigate to the ${page} page.`);
+        }
+
+        function hideDonateModal() {
+            const modal = document.getElementById('donate-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function showDonateModal() {
+            document.getElementById('donate-modal').classList.remove('hidden');
+            document.getElementById('donate-modal').classList.add('flex');
+        }
+
+        // Initialize hero banner on load (Home tab)
+        window.onload = function() {
+            document.getElementById('hero-banner').style.display = 'flex';
+        };
+    </script>
+</body>
+</html>
