@@ -45,6 +45,28 @@ function safeNextPath(next) {
   return next;
 }
 
+const ELECTRICAL_KEYWORDS = [
+  "electric", "electrical", "electrician", "panel", "wiring", "wire",
+  "outlet", "breaker", "circuit", "rewir", "lighting", "light fixture",
+];
+const PLUMBING_KEYWORDS = [
+  "plumb", "drain", "sink", "faucet", "sewer", "sewage", "pipe",
+  "water heater", "toilet", "shower", "leak", "clog",
+];
+
+function mentionsAny(text, keywords) {
+  const lower = text.toLowerCase();
+  return keywords.some((kw) => lower.includes(kw));
+}
+
+function dropOnePlumbingOnlyReview(reviews) {
+  const index = reviews.findIndex(
+    (r) => mentionsAny(r.text, PLUMBING_KEYWORDS) && !mentionsAny(r.text, ELECTRICAL_KEYWORDS)
+  );
+  if (index === -1) return reviews;
+  return reviews.slice(0, index).concat(reviews.slice(index + 1));
+}
+
 function dedupeConsecutiveFirstNames(reviews) {
   const result = [];
   let lastFirstName = null;
@@ -75,10 +97,11 @@ async function fetchGoogleReviews(env) {
     relativeTime: r.relativePublishTimeDescription || "",
     publishTime: r.publishTime || "",
   }));
+  const filtered = dropOnePlumbingOnlyReview(reviews);
   return {
     rating: data.rating ?? null,
     userRatingCount: data.userRatingCount ?? null,
-    reviews: dedupeConsecutiveFirstNames(reviews),
+    reviews: dedupeConsecutiveFirstNames(filtered),
     fetchedAt: new Date().toISOString(),
   };
 }
