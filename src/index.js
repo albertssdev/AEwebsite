@@ -1,8 +1,24 @@
+import { classify } from "./hive/classifier.js";
+import { route } from "./hive/router.js";
+import { logRoute, readRecentLogs } from "./hive/history.js";
+import { PROVIDER_NAMES } from "./hive/adapters.js";
+
 const GATE_COOKIE = "site_gate";
 const GATE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function isGatedPath(pathname) {
   return pathname === "/hive.html" || pathname.startsWith("/LCRCC/");
+}
+
+function isHiveApiPath(pathname) {
+  return pathname === "/api/hive/query" || pathname === "/api/hive/history";
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 async function hmac(key, message) {
@@ -38,6 +54,11 @@ function getCookie(request, name) {
   const header = request.headers.get("Cookie") || "";
   const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return match ? match[1] : null;
+}
+
+async function checkGate(request, env) {
+  const token = getCookie(request, GATE_COOKIE);
+  return verifyGateToken(token, env.GATE_SIGNING_KEY);
 }
 
 function safeNextPath(next) {
@@ -143,13 +164,79 @@ export default {
     }
 
     if (isGatedPath(url.pathname)) {
-      const token = getCookie(request, GATE_COOKIE);
-      const valid = await verifyGateToken(token, env.GATE_SIGNING_KEY);
+      const valid = await checkGate(request, env);
       if (!valid) {
         const gateUrl = new URL("/gate.html", url);
         gateUrl.searchParams.set("next", url.pathname + url.search);
         return Response.redirect(gateUrl.toString(), 302);
       }
+    }
+
+    if (isHiveApiPath(url.pathname)) {
+      // The gate above protects the /hive.html page itself; this protects the API
+      // routes directly, so the password can't be bypassed by hitting them straight —
+      // that would otherwise let anyone run up the paid AI API bills behind them.
+      const valid = await checkGate(request, env);
+      if (!valid) {
+        return json({ error: "unauthorized" }, 401);
+      }
+
+      if (url.pathname === "/api/hive/query" && request.method === "POST") {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: "invalid JSON body" }, 400);
+        }
+
+        const message = typeof body?.message === "string" ? body.message.trim() : "";
+        const forceModel = typeof body?.model === "string" ? body.model : undefined;
+
+        if (!message) {
+          return json({ error: "message is required" }, 400);
+        }
+        if (forceModel && !PROVIDER_NAMES.includes(forceModel)) {
+          return json({ error: `unknown provider "${forceModel}"` }, 400);
+        }
+
+        try {
+          const result = await route(env, message, forceModel);
+          await logRoute(env, message, result);
+          return json({
+            taskType: result.taskType,
+            reason: result.reason,
+            attempts: result.attempts,
+            failed: result.failed,
+            provider: result.result?.provider ?? null,
+            model: result.result?.model ?? null,
+            content: result.result?.content ?? null,
+            isImage: result.taskType === "image" && !result.failed,
+            error: null,
+          });
+        } catch (err) {
+          // Not a technical failure — the provider rejected the request outright.
+          // Surface it as an error rather than silently trying another provider.
+          const { taskType, reason } = classify(message);
+          return json({
+            taskType,
+            reason,
+            attempts: [],
+            failed: true,
+            provider: null,
+            model: null,
+            content: null,
+            isImage: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      if (url.pathname === "/api/hive/history" && request.method === "GET") {
+        const limit = Number(url.searchParams.get("limit")) || 20;
+        return json(await readRecentLogs(env, limit));
+      }
+
+      return json({ error: "not found" }, 404);
     }
 
     if (url.pathname === "/api/reviews" && request.method === "GET") {

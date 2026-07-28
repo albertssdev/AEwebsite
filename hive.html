@@ -5,8 +5,301 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex,nofollow">
 <title>Hive</title>
+<style>
+  :root {
+    --accent: #176b40;
+    --dark: #1f2933;
+    --light: #f8f9fa;
+    --border: #dfe3e8;
+    --user-bubble: #e7f0ea;
+    --assistant-bubble: #ffffff;
+    --error: #b00020;
+    --text-dim: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--dark);
+    background: var(--light);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+  }
+  header h1 { font-size: 1.1rem; margin: 0; color: var(--accent); }
+  .header-controls { display: flex; gap: 0.5rem; align-items: center; }
+  select, .ghost-button, .composer button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--dark);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+  }
+  .ghost-button:hover { border-color: var(--accent); }
+  .app-body { flex: 1; display: flex; min-height: 0; }
+  .panel { display: flex; flex-direction: column; min-height: 0; }
+  #chat-panel { flex: 1; }
+  .messages { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
+  .message {
+    max-width: 70ch;
+    padding: 0.65rem 0.9rem;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.45;
+  }
+  .message.user { align-self: flex-end; background: var(--user-bubble); }
+  .message.assistant { align-self: flex-start; background: var(--assistant-bubble); border: 1px solid var(--border); }
+  .message.error { color: var(--error); border-color: var(--error); }
+  .message img { max-width: 100%; border-radius: 6px; display: block; }
+  .message-meta { margin-top: 0.4rem; font-size: 0.72rem; color: var(--text-dim); }
+  .message.pending .message-meta { font-style: italic; }
+  .composer { display: flex; gap: 0.6rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border); background: #fff; }
+  .composer input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--dark);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.55rem 0.8rem;
+  }
+  .composer input:focus { outline: none; border-color: var(--accent); }
+  .composer button { background: var(--accent); color: #fff; border: none; font-weight: 600; }
+  .history-panel { width: 340px; border-left: 1px solid var(--border); background: #fff; }
+  .history-panel.hidden { display: none; }
+  .history-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+  .history-header h2 { font-size: 0.9rem; margin: 0; }
+  .history-list { flex: 1; overflow-y: auto; padding: 0.5rem 0.75rem; }
+  .history-entry { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.78rem; }
+  .history-entry .h-top { display: flex; justify-content: space-between; color: var(--text-dim); margin-bottom: 0.25rem; }
+  .history-entry .h-query { color: var(--dark); }
+  .history-entry .h-status.failed { color: var(--error); }
+</style>
 </head>
 <body>
-<p>Coming soon.</p>
+  <header>
+    <h1>🐝 Hive</h1>
+    <div class="header-controls">
+      <select id="model-override">
+        <option value="">Auto-route</option>
+        <option value="anthropic">Force: Anthropic</option>
+        <option value="openai">Force: OpenAI</option>
+        <option value="xai">Force: xAI</option>
+        <option value="google">Force: Google</option>
+      </select>
+      <button id="history-toggle" class="ghost-button" type="button">History</button>
+    </div>
+  </header>
+
+  <main class="app-body">
+    <section id="chat-panel" class="panel">
+      <div id="messages" class="messages"></div>
+      <form id="composer" class="composer">
+        <input id="composer-input" type="text" placeholder="Ask Hive anything..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <aside id="history-panel" class="panel history-panel hidden">
+      <div class="history-header">
+        <h2>Routing history</h2>
+        <button id="history-refresh" class="ghost-button" type="button">Refresh</button>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </aside>
+  </main>
+
+<script>
+  const messagesEl = document.getElementById("messages");
+  const composer = document.getElementById("composer");
+  const input = document.getElementById("composer-input");
+  const modelOverride = document.getElementById("model-override");
+  const historyToggle = document.getElementById("history-toggle");
+  const historyPanel = document.getElementById("history-panel");
+  const historyRefresh = document.getElementById("history-refresh");
+  const historyList = document.getElementById("history-list");
+
+  function addMessage({ role, text, meta, isError, pending }) {
+    const bubble = document.createElement("div");
+    bubble.className = `message ${role}` + (isError ? " error" : "") + (pending ? " pending" : "");
+
+    const body = document.createElement("div");
+    body.textContent = text;
+    bubble.appendChild(body);
+
+    if (meta) {
+      const metaEl = document.createElement("div");
+      metaEl.className = "message-meta";
+      metaEl.textContent = meta;
+      bubble.appendChild(metaEl);
+    }
+
+    messagesEl.appendChild(bubble);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  function addImageMessage({ src, meta }) {
+    const bubble = document.createElement("div");
+    bubble.className = "message assistant";
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "generated image";
+    bubble.appendChild(img);
+
+    if (meta) {
+      const metaEl = document.createElement("div");
+      metaEl.className = "message-meta";
+      metaEl.textContent = meta;
+      bubble.appendChild(metaEl);
+    }
+
+    messagesEl.appendChild(bubble);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function imageSrc(content) {
+    if (/^https?:\/\//i.test(content)) return content;
+    return `data:image/png;base64,${content}`;
+  }
+
+  async function sendMessage(text) {
+    addMessage({ role: "user", text });
+    const pendingBubble = addMessage({ role: "assistant", text: "thinking...", pending: true });
+
+    const body = { message: text };
+    const forced = modelOverride.value;
+    if (forced) body.model = forced;
+
+    let data;
+    try {
+      const res = await fetch("/api/hive/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 401) {
+        pendingBubble.remove();
+        addMessage({ role: "assistant", text: "Session expired — reload the page to sign back in.", isError: true });
+        return;
+      }
+      data = await res.json();
+    } catch (err) {
+      pendingBubble.remove();
+      addMessage({ role: "assistant", text: `Request failed: ${err.message}`, isError: true });
+      return;
+    }
+
+    pendingBubble.remove();
+
+    if (data.error) {
+      addMessage({
+        role: "assistant",
+        text: data.error,
+        meta: data.taskType ? `${data.taskType} — declined/rejected by provider` : undefined,
+        isError: true,
+      });
+      return;
+    }
+
+    if (data.failed || !data.content) {
+      addMessage({
+        role: "assistant",
+        text: "All providers for this task type failed or are unconfigured.",
+        meta: data.taskType ? `${data.taskType}: ${data.reason}` : undefined,
+        isError: true,
+      });
+      return;
+    }
+
+    const meta = `${data.taskType} (${data.reason}) → ${data.provider}/${data.model}`;
+
+    if (data.isImage) {
+      addImageMessage({ src: imageSrc(data.content), meta });
+    } else {
+      addMessage({ role: "assistant", text: data.content, meta });
+    }
+  }
+
+  composer.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendMessage(text);
+  });
+
+  function formatHistoryEntry(entry) {
+    const row = document.createElement("div");
+    row.className = "history-entry";
+
+    const top = document.createElement("div");
+    top.className = "h-top";
+    const time = document.createElement("span");
+    time.textContent = new Date(entry.timestamp).toLocaleString();
+    const status = document.createElement("span");
+    status.className = "h-status" + (entry.failed ? " failed" : "");
+    status.textContent = entry.failed ? "FAILED" : `${entry.usedProvider}/${entry.usedModel}`;
+    top.appendChild(time);
+    top.appendChild(status);
+
+    const tag = document.createElement("div");
+    tag.className = "h-top";
+    tag.textContent = `[${entry.taskType}]`;
+
+    const query = document.createElement("div");
+    query.className = "h-query";
+    query.textContent = entry.query;
+
+    row.appendChild(top);
+    row.appendChild(tag);
+    row.appendChild(query);
+    return row;
+  }
+
+  async function loadHistory() {
+    historyList.textContent = "Loading...";
+    try {
+      const res = await fetch("/api/hive/history?limit=30");
+      const entries = await res.json();
+      historyList.textContent = "";
+      if (!Array.isArray(entries) || entries.length === 0) {
+        historyList.textContent = "No routing history yet.";
+        return;
+      }
+      for (const entry of entries) {
+        historyList.appendChild(formatHistoryEntry(entry));
+      }
+    } catch (err) {
+      historyList.textContent = `Failed to load history: ${err.message}`;
+    }
+  }
+
+  historyToggle.addEventListener("click", () => {
+    historyPanel.classList.toggle("hidden");
+    if (!historyPanel.classList.contains("hidden")) loadHistory();
+  });
+
+  historyRefresh.addEventListener("click", loadHistory);
+
+  addMessage({
+    role: "assistant",
+    text: "Hi! Ask me anything — I'll classify it and route it to whichever model is best suited.",
+  });
+</script>
 </body>
 </html>
