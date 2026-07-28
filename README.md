@@ -76,6 +76,20 @@ This uploads all static assets and the Worker, and applies routes for
 `albertselectric.net` and `www.albertselectric.net` as defined in
 `wrangler.jsonc`.
 
+## Automatic deploys (GitHub Actions)
+
+`.github/workflows/deploy.yml` runs `wrangler deploy` automatically on every
+push to `main`. It needs two repository secrets under **Settings → Secrets
+and variables → Actions**:
+
+- `CLOUDFLARE_API_TOKEN` — create at
+  [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+  using the **Edit Cloudflare Workers** template, scoped to this account only
+- `CLOUDFLARE_ACCOUNT_ID` — from `wrangler whoami`
+
+The `GATE_PASSWORD` / `GATE_SIGNING_KEY` Worker secrets are set separately
+(see above) and persist across CI deploys — the workflow doesn't touch them.
+
 ## Rotating the gate password
 
 ```bash
