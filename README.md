@@ -3,6 +3,23 @@
 Static site for Alberts Electric, served via a Cloudflare Worker with static
 assets. Deployed at [albertselectric.net](https://albertselectric.net).
 
+## How updates work
+
+1. Edit files in this repo (locally or however you're working).
+2. Commit and push to `main`: `git push`.
+3. GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
+   picks up the push and runs `wrangler deploy` automatically — see
+   [Automatic deploys](#automatic-deploys-github-actions) below.
+4. Live within ~30s at [albertselectric.net](https://albertselectric.net).
+
+No manual deploy step needed for normal edits. `wrangler deploy` from your
+own machine (see [Deploying](#deploying)) is only for when you need to push
+a change immediately without waiting on a commit/push, or you're working
+somewhere without GitHub Actions access.
+
+Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsite)
+(public, default branch `main`).
+
 ## Project structure
 
 - `index.html`, `about.html`, `services.html`, `service-area.html`, `contact.html` — the business site
@@ -89,6 +106,21 @@ and variables → Actions**:
 
 The `GATE_PASSWORD` / `GATE_SIGNING_KEY` Worker secrets are set separately
 (see above) and persist across CI deploys — the workflow doesn't touch them.
+
+**Gotchas already hit and fixed — don't reintroduce these:**
+
+- The workflow pins `wranglerVersion: "4.114.0"`. Without it,
+  `cloudflare/wrangler-action` installs an old cached Wrangler (3.x) that
+  can't parse `wrangler.jsonc`, so it silently finds no config and fails
+  with "Missing entry-point."
+- CI installs Wrangler into `node_modules/` inside the checkout. Since the
+  assets directory is `./` (the whole repo), `node_modules/` (and any future
+  `package.json`/`package-lock.json`) must stay listed in `.assetsignore` —
+  otherwise Wrangler's own 122 MB `workerd` binary gets uploaded as a site
+  asset and the deploy fails with "Asset too large."
+- `.assetsignore` also excludes repo-management files (`README.md`,
+  `LICENSE`, `.github/`, `.git/`, `.gitignore`) so they aren't served
+  publicly at e.g. `/README.md`.
 
 ## Rotating the gate password
 
