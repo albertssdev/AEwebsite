@@ -37,6 +37,8 @@
           (data.userRatingCount ? " of " + data.userRatingCount + " reviews" : "") +
           "</p>";
       }
+      html += '<div class="reviews-carousel">';
+      html += '<button type="button" class="carousel-btn prev" aria-label="Previous review">&#8249;</button>';
       html += '<div class="reviews-cards">';
       reviews.forEach(function (r) {
         html +=
@@ -50,7 +52,36 @@
           "</div>";
       });
       html += "</div>";
+      html += '<button type="button" class="carousel-btn next" aria-label="Next review">&#8250;</button>';
+      html += "</div>";
       container.innerHTML = html;
+
+      var track = container.querySelector(".reviews-cards");
+      var prevBtn = container.querySelector(".carousel-btn.prev");
+      var nextBtn = container.querySelector(".carousel-btn.next");
+
+      function scrollByCard(direction) {
+        var card = track.querySelector(".review-card");
+        if (!card) return;
+        var style = window.getComputedStyle(track);
+        var gap = parseFloat(style.columnGap || style.gap || 0) || 0;
+        track.scrollBy({ left: direction * (card.offsetWidth + gap), behavior: "smooth" });
+      }
+
+      prevBtn.addEventListener("click", function () { scrollByCard(-1); });
+      nextBtn.addEventListener("click", function () { scrollByCard(1); });
+
+      function updateButtons() {
+        var maxScroll = track.scrollWidth - track.clientWidth;
+        var atStart = track.scrollLeft <= 1;
+        var atEnd = track.scrollLeft >= maxScroll - 1;
+        prevBtn.style.visibility = atStart ? "hidden" : "visible";
+        nextBtn.style.visibility = maxScroll <= 1 || atEnd ? "hidden" : "visible";
+      }
+
+      track.addEventListener("scroll", updateButtons);
+      window.addEventListener("resize", updateButtons);
+      updateButtons();
     })
     .catch(function () {
       container.innerHTML = "";
