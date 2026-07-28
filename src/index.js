@@ -137,6 +137,7 @@ export default {
           cached = JSON.stringify(data);
           await env.REVIEWS_KV.put("reviews", cached);
         } catch (err) {
+          console.error("fetchGoogleReviews failed:", err.message);
           return new Response(JSON.stringify({ error: "unavailable" }), {
             status: 502,
             headers: { "Content-Type": "application/json" },
