@@ -115,9 +115,9 @@ header p { font-size: 1.1rem; margin-bottom: 1.5rem; }
 .reviews-cards::-webkit-scrollbar { display: none; }
 
 .review-card {
-  flex: 0 0 85%;
-  max-width: 320px;
-  min-height: 240px;
+  flex: 0 0 90%;
+  max-width: 360px;
+  min-height: 420px;
   scroll-snap-align: start;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -127,7 +127,7 @@ header p { font-size: 1.1rem; margin-bottom: 1.5rem; }
   flex-direction: column;
 }
 @media (min-width: 480px) {
-  .review-card { flex-basis: 320px; }
+  .review-card { flex-basis: 360px; }
 }
 .review-card .review-stars { color: #f5a623; letter-spacing: 1px; margin-bottom: 0.5rem; }
 .review-card .review-text {
@@ -135,7 +135,7 @@ header p { font-size: 1.1rem; margin-bottom: 1.5rem; }
   margin: 0 0 1rem;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 6;
+  -webkit-line-clamp: 14;
   overflow: hidden;
 }
 .review-meta {
