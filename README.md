@@ -30,6 +30,8 @@ Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsit
   domain as a convenience. `LCRCC` and `hive.html` are password-gated and
   `noindex,nofollow`; `sermon-search/` is public but also `noindex,nofollow`
   so none of it affects the business site's SEO.
+- `assets/js/reviews.js` — fetches `/api/reviews` (a Worker route backed by
+  Google's Places API, cached in KV) and renders the homepage reviews section
 
 ## Prerequisites
 
@@ -59,6 +61,7 @@ Create a `.dev.vars` file in this directory (never commit it — it's in
 ```
 GATE_PASSWORD=<password for the LCRCC/Hive gate>
 GATE_SIGNING_KEY=<random 32+ byte hex string>
+GOOGLE_PLACES_API_KEY=<see "Google reviews setup" below>
 ```
 
 Generate a signing key with:
@@ -121,6 +124,47 @@ The `GATE_PASSWORD` / `GATE_SIGNING_KEY` Worker secrets are set separately
 - `.assetsignore` also excludes repo-management files (`README.md`,
   `LICENSE`, `.github/`, `.git/`, `.gitignore`) so they aren't served
   publicly at e.g. `/README.md`.
+
+## Google reviews widget
+
+The homepage reviews section is custom-built (not a third-party embed), so
+it can be kept free of duplicate-name-in-a-row reviews and doesn't require a
+paid subscription. It works like this:
+
+1. A daily Cron Trigger (`0 6 * * *` in `wrangler.jsonc`) calls
+   `scheduled()` in `src/index.js`, which fetches up to 5 reviews from
+   Google's Places API (New), drops any review whose first name matches the
+   review immediately before it, and stores the result in the `REVIEWS_KV`
+   namespace.
+2. The `/api/reviews` Worker route serves that cached JSON (and lazily
+   fetches+caches on first request if KV is empty, so it self-heals without
+   waiting for the next cron run).
+3. `assets/js/reviews.js` fetches `/api/reviews` on page load and renders
+   the cards.
+
+**One-time setup (required — the widget won't show anything until this is
+done):**
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create/use
+   a project, enable **Places API (New)**, and enable billing (required by
+   Google even though usage at this volume — ~30 calls/month — stays inside
+   the free monthly credit).
+2. Create an API key under **APIs & Services → Credentials**, and restrict
+   it to **Places API (New)** only.
+3. Find your Place ID using Google's
+   [Place ID Finder](https://developers.google.com/maps/documentation/places/web-service/place-id)
+   (search the business name/address). Place IDs aren't sensitive — put it
+   directly in `wrangler.jsonc` under `vars.GOOGLE_PLACE_ID`.
+4. Set the API key as a secret (never commit it):
+   ```bash
+   wrangler secret put GOOGLE_PLACES_API_KEY
+   ```
+5. Deploy. The section stays blank (gracefully, no error shown) until steps
+   1–4 are done and a review fetch has succeeded at least once.
+
+To force an immediate refresh instead of waiting for the next 6am cron run,
+delete the `reviews` key from the `REVIEWS_KV` namespace — the next visitor
+to hit `/api/reviews` will trigger a fresh fetch.
 
 ## Rotating the gate password
 

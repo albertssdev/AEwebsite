@@ -45,7 +45,50 @@ function safeNextPath(next) {
   return next;
 }
 
+function dedupeConsecutiveFirstNames(reviews) {
+  const result = [];
+  let lastFirstName = null;
+  for (const review of reviews) {
+    const firstName = review.author.trim().split(/\s+/)[0]?.toLowerCase() || null;
+    if (firstName && firstName === lastFirstName) continue;
+    result.push(review);
+    lastFirstName = firstName;
+  }
+  return result;
+}
+
+async function fetchGoogleReviews(env) {
+  const res = await fetch(`https://places.googleapis.com/v1/places/${env.GOOGLE_PLACE_ID}`, {
+    headers: {
+      "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
+      "X-Goog-FieldMask": "reviews,rating,userRatingCount",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Places API error ${res.status}: ${await res.text()}`);
+  }
+  const data = await res.json();
+  const reviews = (data.reviews || []).map((r) => ({
+    author: r.authorAttribution?.displayName || "Anonymous",
+    rating: r.rating ?? null,
+    text: r.text?.text || r.originalText?.text || "",
+    relativeTime: r.relativePublishTimeDescription || "",
+    publishTime: r.publishTime || "",
+  }));
+  return {
+    rating: data.rating ?? null,
+    userRatingCount: data.userRatingCount ?? null,
+    reviews: dedupeConsecutiveFirstNames(reviews),
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    const data = await fetchGoogleReviews(env);
+    await env.REVIEWS_KV.put("reviews", JSON.stringify(data));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -84,6 +127,28 @@ export default {
         gateUrl.searchParams.set("next", url.pathname + url.search);
         return Response.redirect(gateUrl.toString(), 302);
       }
+    }
+
+    if (url.pathname === "/api/reviews" && request.method === "GET") {
+      let cached = await env.REVIEWS_KV.get("reviews");
+      if (!cached) {
+        try {
+          const data = await fetchGoogleReviews(env);
+          cached = JSON.stringify(data);
+          await env.REVIEWS_KV.put("reviews", cached);
+        } catch (err) {
+          return new Response(JSON.stringify({ error: "unavailable" }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+      return new Response(cached, {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
     }
 
     return env.ASSETS.fetch(request);
