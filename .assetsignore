@@ -4,3 +4,11 @@ wrangler.jsonc
 src/
 .dev.vars
 *.log
+node_modules/
+.github/
+.git/
+README.md
+LICENSE
+.gitignore
+package.json
+package-lock.json
