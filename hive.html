@@ -86,6 +86,14 @@
   }
   .recent-item:hover { background: var(--sidebar-hover); }
   .recent-item.active { background: var(--sidebar-active); }
+  .recent-bullet {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-dim);
+    background: transparent;
+  }
   .recent-item .recent-text { flex: 1; min-width: 0; }
   .recent-item .recent-title {
     font-size: 0.85rem;
@@ -416,6 +424,9 @@
       item.className = "recent-item" + (conv.id === activeId ? " active" : "");
       item.dataset.id = conv.id;
 
+      const bullet = document.createElement("span");
+      bullet.className = "recent-bullet";
+
       const textWrap = document.createElement("div");
       textWrap.className = "recent-text";
       const title = document.createElement("div");
@@ -436,6 +447,7 @@
         removeConversation(conv.id);
       });
 
+      item.appendChild(bullet);
       item.appendChild(textWrap);
       item.appendChild(delBtn);
       item.addEventListener("click", () => loadConversation(conv.id));
