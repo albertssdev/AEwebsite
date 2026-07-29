@@ -35,7 +35,8 @@
     border-bottom: 1px solid var(--border);
     background: #fff;
   }
-  header h1 { font-size: 1.1rem; margin: 0; color: var(--accent); }
+  header h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; margin: 0; color: var(--accent); }
+  header h1 img { width: 24px; height: 24px; }
   .header-controls { display: flex; gap: 0.5rem; align-items: center; }
   select, .ghost-button, .composer button {
     font-family: inherit;
@@ -92,7 +93,7 @@
 </head>
 <body>
   <header>
-    <h1>🐝 Hive</h1>
+    <h1><img src="hive-favicon.svg" alt="" width="24" height="24" /> Hive</h1>
     <div class="header-controls">
       <select id="model-override">
         <option value="">Auto-route</option>
