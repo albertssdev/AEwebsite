@@ -1,7 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M13,56 A19,22 0 0 1 51,56 L13,56 Z" fill="#f5b942"/>
-  <path d="M19,40 Q32,43 45,40" fill="none" stroke="#d9971f" stroke-width="2.1" stroke-linecap="round"/>
-  <path d="M15,46 Q32,49.5 49,46" fill="none" stroke="#d9971f" stroke-width="2.3" stroke-linecap="round"/>
-  <path d="M14,52 Q32,55.5 50,52" fill="none" stroke="#d9971f" stroke-width="2.4" stroke-linecap="round"/>
+  <defs>
+    <clipPath id="hive-outline">
+      <path d="M13,56 A19,22 0 0 1 51,56 L13,56 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#hive-outline)">
+    <rect x="0" y="34" width="64" height="4.4" fill="#f5b942"/>
+    <rect x="0" y="38.4" width="64" height="4.4" fill="#f7c463"/>
+    <rect x="0" y="42.8" width="64" height="4.4" fill="#f5b942"/>
+    <rect x="0" y="47.2" width="64" height="4.4" fill="#f7c463"/>
+    <rect x="0" y="51.6" width="64" height="4.4" fill="#f5b942"/>
+  </g>
   <ellipse cx="32" cy="51.5" rx="4.5" ry="3.3" fill="#4a2f12"/>
 </svg>
