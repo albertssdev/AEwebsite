@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <clipPath id="hive-flat-base">
-      <rect x="0" y="0" width="64" height="56"/>
+      <rect x="0" y="0" width="64" height="60"/>
     </clipPath>
   </defs>
   <g clip-path="url(#hive-flat-base)">
-    <ellipse cx="32" cy="54.5" rx="19"   ry="6.5" fill="#f5b942"/>
-    <ellipse cx="32" cy="51.2" rx="18.5" ry="6.2" fill="#f7c463"/>
-    <ellipse cx="32" cy="47.8" rx="17.5" ry="5.8" fill="#f5b942"/>
-    <ellipse cx="32" cy="44.5" rx="16"   ry="5.4" fill="#f7c463"/>
-    <ellipse cx="32" cy="41.2" rx="14"   ry="5.0" fill="#f5b942"/>
-    <ellipse cx="32" cy="37.8" rx="10.5" ry="4.4" fill="#f7c463"/>
-    <ellipse cx="32" cy="34.5" rx="5.5"  ry="3.4" fill="#f5b942"/>
+    <ellipse cx="32" cy="57.9" rx="27.0" ry="9.2" fill="#f5b942"/>
+    <ellipse cx="32" cy="53.2" rx="26.3" ry="8.8" fill="#f7c463"/>
+    <ellipse cx="32" cy="48.4" rx="24.9" ry="8.2" fill="#f5b942"/>
+    <ellipse cx="32" cy="43.7" rx="22.7" ry="7.7" fill="#f7c463"/>
+    <ellipse cx="32" cy="39.0" rx="19.9" ry="7.1" fill="#f5b942"/>
+    <ellipse cx="32" cy="34.1" rx="14.9" ry="6.3" fill="#f7c463"/>
+    <ellipse cx="32" cy="29.5" rx="7.8"  ry="4.8" fill="#f5b942"/>
   </g>
-  <ellipse cx="32" cy="51.5" rx="3.2" ry="2.4" fill="#4a2f12"/>
+  <ellipse cx="32" cy="53.6" rx="4.6" ry="3.4" fill="#4a2f12"/>
 </svg>
