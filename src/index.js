@@ -1,7 +1,8 @@
 import { classify } from "./hive/classifier.js";
 import { route } from "./hive/router.js";
 import { makeTitle, listConversations, getConversation, saveConversation, deleteConversation } from "./hive/conversations.js";
-import { PROVIDER_NAMES } from "./hive/adapters.js";
+import { PROVIDERS, PROVIDER_NAMES } from "./hive/adapters.js";
+import { describeError } from "./hive/base.js";
 
 const GATE_COOKIE = "site_gate";
 const GATE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -186,6 +187,33 @@ export default {
         return json(await listConversations(env, limit));
       }
 
+      if (url.pathname === "/api/hive/doctor" && request.method === "GET") {
+        const results = [];
+        for (const name of PROVIDER_NAMES) {
+          const provider = PROVIDERS[name];
+          const model = provider.model(env);
+          if (!provider.isConfigured(env)) {
+            results.push({ provider: name, model, configured: false, ok: false, error: null, ms: null });
+            continue;
+          }
+          const start = Date.now();
+          try {
+            await provider.generateText(env, [{ role: "user", content: "Reply with only the word: OK" }]);
+            results.push({ provider: name, model, configured: true, ok: true, error: null, ms: Date.now() - start });
+          } catch (err) {
+            results.push({
+              provider: name,
+              model,
+              configured: true,
+              ok: false,
+              error: describeError(err),
+              ms: Date.now() - start,
+            });
+          }
+        }
+        return json(results);
+      }
+
       const convMatch = url.pathname.match(/^\/api\/hive\/conversations\/([^/]+)(?:\/(messages))?$/);
 
       if (convMatch && !convMatch[2] && request.method === "GET") {
@@ -197,6 +225,25 @@ export default {
       if (convMatch && !convMatch[2] && request.method === "DELETE") {
         await deleteConversation(env, convMatch[1]);
         return json({ ok: true });
+      }
+
+      if (convMatch && !convMatch[2] && request.method === "PATCH") {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: "invalid JSON body" }, 400);
+        }
+        const title = typeof body?.title === "string" ? body.title.trim() : "";
+        if (!title) return json({ error: "title is required" }, 400);
+
+        const conv = await getConversation(env, convMatch[1]);
+        if (!conv) return json({ error: "not found" }, 404);
+
+        conv.title = makeTitle(title);
+        conv.updatedAt = new Date().toISOString();
+        await saveConversation(env, conv);
+        return json({ ok: true, title: conv.title });
       }
 
       if (convMatch && convMatch[2] === "messages" && request.method === "POST") {

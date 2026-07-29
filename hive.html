@@ -102,8 +102,8 @@
     text-overflow: ellipsis;
   }
   .recent-item .recent-time { font-size: 0.7rem; color: var(--text-dim); }
-  .recent-item .delete-btn {
-    flex-shrink: 0;
+  .recent-menu-wrap { position: relative; flex-shrink: 0; }
+  .menu-btn {
     display: none;
     align-items: center;
     justify-content: center;
@@ -114,12 +114,63 @@
     background: transparent;
     color: var(--text-dim);
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     line-height: 1;
   }
-  .recent-item:hover .delete-btn { display: flex; }
-  .recent-item .delete-btn:hover { background: #ddd8; color: var(--error); }
+  .recent-item:hover .menu-btn { display: flex; }
+  .menu-btn:hover { background: #ddd8; color: var(--dark); }
+  .recent-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 2px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    min-width: 120px;
+    z-index: 30;
+    overflow: hidden;
+  }
+  .menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--dark);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .menu-item:hover { background: var(--sidebar-hover); }
+  .menu-item-danger { color: var(--error); }
+  .recent-rename-input {
+    width: 100%;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--dark);
+  }
   .recents-empty { padding: 0.6rem; font-size: 0.8rem; color: var(--text-dim); }
+  .doctor-btn {
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .doctor-btn:hover { background: var(--sidebar-hover); color: var(--dark); }
 
   /* Main panel */
   .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -243,6 +294,7 @@
       </button>
       <div class="recents-label">Recents</div>
       <div id="recents-list" class="recents-list"></div>
+      <button id="doctor-btn" class="doctor-btn" type="button">🩺 Check providers</button>
     </aside>
 
     <div class="main">
@@ -274,6 +326,7 @@
   const modelOverride = document.getElementById("model-override");
   const recentsList = document.getElementById("recents-list");
   const newChatBtn = document.getElementById("new-chat-btn");
+  const doctorBtn = document.getElementById("doctor-btn");
   const convTitleEl = document.getElementById("conv-title");
   const sidebar = document.getElementById("sidebar");
   const sidebarToggle = document.getElementById("sidebar-toggle");
@@ -438,21 +491,122 @@
       textWrap.appendChild(title);
       textWrap.appendChild(time);
 
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "delete-btn";
-      delBtn.textContent = "✕";
-      delBtn.addEventListener("click", (e) => {
+      const menuWrap = document.createElement("div");
+      menuWrap.className = "recent-menu-wrap";
+
+      const menuBtn = document.createElement("button");
+      menuBtn.type = "button";
+      menuBtn.className = "menu-btn";
+      menuBtn.textContent = "⋯";
+      menuBtn.setAttribute("aria-label", "Conversation options");
+
+      const menu = document.createElement("div");
+      menu.className = "recent-menu";
+      menu.hidden = true;
+
+      const renameBtn = document.createElement("button");
+      renameBtn.type = "button";
+      renameBtn.className = "menu-item";
+      renameBtn.textContent = "Rename";
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "menu-item menu-item-danger";
+      deleteBtn.textContent = "Delete";
+
+      menuBtn.addEventListener("click", (e) => {
         e.stopPropagation();
+        const willOpen = menu.hidden;
+        closeOpenMenu();
+        if (willOpen) {
+          menu.hidden = false;
+          openMenuEl = menu;
+        }
+      });
+      renameBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeOpenMenu();
+        startRename(conv, title);
+      });
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeOpenMenu();
         removeConversation(conv.id);
       });
 
+      menu.appendChild(renameBtn);
+      menu.appendChild(deleteBtn);
+      menuWrap.appendChild(menuBtn);
+      menuWrap.appendChild(menu);
+
       item.appendChild(bullet);
       item.appendChild(textWrap);
-      item.appendChild(delBtn);
+      item.appendChild(menuWrap);
       item.addEventListener("click", () => loadConversation(conv.id));
       recentsList.appendChild(item);
     }
+  }
+
+  let openMenuEl = null;
+  function closeOpenMenu() {
+    if (openMenuEl) {
+      openMenuEl.hidden = true;
+      openMenuEl = null;
+    }
+  }
+  document.addEventListener("click", closeOpenMenu);
+
+  function startRename(conv, titleEl) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "recent-rename-input";
+    input.value = conv.title;
+    titleEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+
+    async function commit() {
+      if (done) return;
+      done = true;
+      const newTitle = input.value.trim();
+      if (newTitle && newTitle !== conv.title) {
+        try {
+          const res = await fetch(`/api/hive/conversations/${conv.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: newTitle }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            conv.title = data.title;
+            if (conv.id === activeId) convTitleEl.textContent = data.title;
+          }
+        } catch {
+          // best-effort — falls back to the old title on failure
+        }
+      }
+      renderRecents();
+    }
+
+    function cancel() {
+      if (done) return;
+      done = true;
+      renderRecents();
+    }
+
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancel();
+      }
+    });
   }
 
   async function fetchRecents() {
@@ -571,6 +725,47 @@
   });
 
   newChatBtn.addEventListener("click", newChat);
+
+  function formatDoctorResults(results) {
+    const lines = results.map((r) => {
+      const label = `${r.provider} (${r.model})`.padEnd(34);
+      if (!r.configured) return `${label} skipped — no API key set`;
+      if (r.ok) return `${label} ok (${r.ms}ms)`;
+      return `${label} FAILED — ${r.error}`;
+    });
+    return lines.join("\n");
+  }
+
+  async function runDoctor() {
+    doctorBtn.disabled = true;
+    const pendingBubble = addMessage({ role: "assistant", text: "Checking configured providers...", pending: true });
+    try {
+      const res = await fetch("/api/hive/doctor");
+      if (res.status === 401) {
+        pendingBubble.remove();
+        showSessionExpired();
+        return;
+      }
+      const results = await res.json();
+      pendingBubble.remove();
+      const anyFailed = results.some((r) => r.configured && !r.ok);
+      addMessage({
+        role: "assistant",
+        text: formatDoctorResults(results),
+        meta: anyFailed
+          ? "One or more providers failed — see hints above."
+          : "All configured providers are reachable.",
+        isError: anyFailed,
+      });
+    } catch (err) {
+      pendingBubble.remove();
+      addMessage({ role: "assistant", text: `Health check failed: ${err.message}`, isError: true });
+    } finally {
+      doctorBtn.disabled = false;
+    }
+  }
+
+  doctorBtn.addEventListener("click", runDoctor);
 
   function closeSidebarOnMobile() {
     sidebar.classList.remove("open");
