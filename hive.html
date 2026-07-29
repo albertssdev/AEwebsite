@@ -11,7 +11,10 @@
     --accent: #176b40;
     --dark: #1f2933;
     --light: #f8f9fa;
-    --border: #dfe3e8;
+    --border: #e4e2db;
+    --sidebar-bg: #f5f3ee;
+    --sidebar-hover: #ebe8e0;
+    --sidebar-active: #e3e9e4;
     --user-bubble: #e7f0ea;
     --assistant-bubble: #ffffff;
     --error: #b00020;
@@ -20,25 +23,124 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: var(--dark);
     background: var(--light);
   }
-  header {
+  .shell { display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0.9rem 0.7rem;
+  }
+  .sidebar-brand {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .sidebar-brand img { width: 22px; height: 22px; }
+  .new-chat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .new-chat-btn .plus { font-size: 1.1rem; line-height: 1; }
+  .new-chat-btn:hover { filter: brightness(1.08); }
+  .recents-label {
+    margin: 1.1rem 0.5rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+  }
+  .recents-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .recent-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--dark);
+  }
+  .recent-item:hover { background: var(--sidebar-hover); }
+  .recent-item.active { background: var(--sidebar-active); }
+  .recent-item .recent-text { flex: 1; min-width: 0; }
+  .recent-item .recent-title {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-item .recent-time { font-size: 0.7rem; color: var(--text-dim); }
+  .recent-item .delete-btn {
+    flex-shrink: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .recent-item:hover .delete-btn { display: flex; }
+  .recent-item .delete-btn:hover { background: #ddd8; color: var(--error); }
+  .recents-empty { padding: 0.6rem; font-size: 0.8rem; color: var(--text-dim); }
+
+  /* Main panel */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .main-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--border);
     background: #fff;
   }
-  header h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; margin: 0; color: var(--accent); }
-  header h1 img { width: 24px; height: 24px; }
-  .header-controls { display: flex; gap: 0.5rem; align-items: center; }
-  select, .ghost-button, .composer button {
+  .icon-button {
+    display: none;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .conv-title {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  select {
     font-family: inherit;
     font-size: 0.85rem;
     color: var(--dark);
@@ -48,10 +150,6 @@
     padding: 0.4rem 0.7rem;
     cursor: pointer;
   }
-  .ghost-button:hover { border-color: var(--accent); }
-  .app-body { flex: 1; display: flex; min-height: 0; }
-  .panel { display: flex; flex-direction: column; min-height: 0; }
-  #chat-panel { flex: 1; }
   .messages { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
   .message {
     max-width: 70ch;
@@ -79,60 +177,88 @@
     padding: 0.55rem 0.8rem;
   }
   .composer input:focus { outline: none; border-color: var(--accent); }
-  .composer button { background: var(--accent); color: #fff; border: none; font-weight: 600; }
-  .history-panel { width: 340px; border-left: 1px solid var(--border); background: #fff; }
-  .history-panel.hidden { display: none; }
-  .history-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
-  .history-header h2 { font-size: 0.9rem; margin: 0; }
-  .history-list { flex: 1; overflow-y: auto; padding: 0.5rem 0.75rem; }
-  .history-entry { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.78rem; }
-  .history-entry .h-top { display: flex; justify-content: space-between; color: var(--text-dim); margin-bottom: 0.25rem; }
-  .history-entry .h-query { color: var(--dark); }
-  .history-entry .h-status.failed { color: var(--error); }
+  .composer button {
+    font-family: inherit;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  @media (max-width: 760px) {
+    .icon-button { display: inline-flex; align-items: center; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 20;
+      transform: translateX(-100%);
+      transition: transform 0.18s ease;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+    }
+    .sidebar.open { transform: translateX(0); }
+  }
 </style>
 </head>
 <body>
-  <header>
-    <h1><img src="hive-favicon.svg" alt="" width="24" height="24" /> Hive</h1>
-    <div class="header-controls">
-      <select id="model-override">
-        <option value="">Auto-route</option>
-        <option value="anthropic">Force: Anthropic</option>
-        <option value="openai">Force: OpenAI</option>
-        <option value="xai">Force: xAI</option>
-        <option value="google">Force: Google</option>
-      </select>
-      <button id="history-toggle" class="ghost-button" type="button">History</button>
-    </div>
-  </header>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="hive-favicon.svg" alt="" />
+        <span>Hive</span>
+      </div>
+      <button id="new-chat-btn" class="new-chat-btn" type="button">
+        <span class="plus">+</span> New chat
+      </button>
+      <div class="recents-label">Recents</div>
+      <div id="recents-list" class="recents-list"></div>
+    </aside>
 
-  <main class="app-body">
-    <section id="chat-panel" class="panel">
+    <div class="main">
+      <header class="main-header">
+        <button id="sidebar-toggle" class="icon-button" type="button" aria-label="Toggle sidebar">☰</button>
+        <div class="conv-title" id="conv-title">New chat</div>
+        <select id="model-override">
+          <option value="">Auto-route</option>
+          <option value="anthropic">Force: Anthropic</option>
+          <option value="openai">Force: OpenAI</option>
+          <option value="xai">Force: xAI</option>
+          <option value="google">Force: Google</option>
+        </select>
+      </header>
+
       <div id="messages" class="messages"></div>
+
       <form id="composer" class="composer">
         <input id="composer-input" type="text" placeholder="Ask Hive anything..." autocomplete="off" />
         <button type="submit">Send</button>
       </form>
-    </section>
-
-    <aside id="history-panel" class="panel history-panel hidden">
-      <div class="history-header">
-        <h2>Routing history</h2>
-        <button id="history-refresh" class="ghost-button" type="button">Refresh</button>
-      </div>
-      <div id="history-list" class="history-list"></div>
-    </aside>
-  </main>
+    </div>
+  </div>
 
 <script>
   const messagesEl = document.getElementById("messages");
   const composer = document.getElementById("composer");
   const input = document.getElementById("composer-input");
   const modelOverride = document.getElementById("model-override");
-  const historyToggle = document.getElementById("history-toggle");
-  const historyPanel = document.getElementById("history-panel");
-  const historyRefresh = document.getElementById("history-refresh");
-  const historyList = document.getElementById("history-list");
+  const recentsList = document.getElementById("recents-list");
+  const newChatBtn = document.getElementById("new-chat-btn");
+  const convTitleEl = document.getElementById("conv-title");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarToggle = document.getElementById("sidebar-toggle");
+
+  let activeId = null;
+  let recents = [];
+
+  function welcomeMessage() {
+    messagesEl.textContent = "";
+    addMessage({
+      role: "assistant",
+      text: "Hi! Ask me anything — I'll classify it and route it to whichever model is best suited.",
+    });
+  }
 
   function addMessage({ role, text, meta, isError, pending }) {
     const bubble = document.createElement("div");
@@ -179,6 +305,158 @@
     return `data:image/png;base64,${content}`;
   }
 
+  function renderAssistantEntry(entry) {
+    if (entry.error) {
+      addMessage({
+        role: "assistant",
+        text: entry.error,
+        meta: entry.taskType ? `${entry.taskType} — declined/rejected by provider` : undefined,
+        isError: true,
+      });
+      return;
+    }
+    if (entry.failed || !entry.content) {
+      addMessage({
+        role: "assistant",
+        text: "All providers for this task type failed or are unconfigured.",
+        meta: entry.taskType ? `${entry.taskType}: ${entry.reason}` : undefined,
+        isError: true,
+      });
+      return;
+    }
+    const meta = `${entry.taskType} (${entry.reason}) → ${entry.provider}/${entry.model}`;
+    if (entry.isImage) {
+      addImageMessage({ src: imageSrc(entry.content), meta });
+    } else {
+      addMessage({ role: "assistant", text: entry.content, meta });
+    }
+  }
+
+  function relativeTime(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 60) return "Just now";
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    const day = Math.floor(hr / 24);
+    if (day === 1) return "Yesterday";
+    if (day < 7) return `${day}d ago`;
+    return new Date(iso).toLocaleDateString();
+  }
+
+  function renderRecents() {
+    recentsList.textContent = "";
+    if (recents.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "recents-empty";
+      empty.textContent = "No conversations yet.";
+      recentsList.appendChild(empty);
+      return;
+    }
+
+    for (const conv of recents) {
+      const item = document.createElement("div");
+      item.className = "recent-item" + (conv.id === activeId ? " active" : "");
+      item.dataset.id = conv.id;
+
+      const textWrap = document.createElement("div");
+      textWrap.className = "recent-text";
+      const title = document.createElement("div");
+      title.className = "recent-title";
+      title.textContent = conv.title;
+      const time = document.createElement("div");
+      time.className = "recent-time";
+      time.textContent = relativeTime(conv.updatedAt);
+      textWrap.appendChild(title);
+      textWrap.appendChild(time);
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "delete-btn";
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeConversation(conv.id);
+      });
+
+      item.appendChild(textWrap);
+      item.appendChild(delBtn);
+      item.addEventListener("click", () => loadConversation(conv.id));
+      recentsList.appendChild(item);
+    }
+  }
+
+  async function fetchRecents() {
+    try {
+      const res = await fetch("/api/hive/conversations?limit=50");
+      if (!res.ok) return;
+      recents = await res.json();
+      renderRecents();
+    } catch {
+      // Sidebar just stays empty/stale on network failure — not worth a blocking error.
+    }
+  }
+
+  function upsertRecent({ id, title, updatedAt }) {
+    recents = recents.filter((c) => c.id !== id);
+    recents.unshift({ id, title, updatedAt });
+    renderRecents();
+  }
+
+  async function removeConversation(id) {
+    if (!confirm("Delete this chat?")) return;
+    try {
+      await fetch(`/api/hive/conversations/${id}`, { method: "DELETE" });
+    } catch {
+      // best-effort
+    }
+    recents = recents.filter((c) => c.id !== id);
+    renderRecents();
+    if (id === activeId) newChat();
+  }
+
+  function newChat() {
+    activeId = null;
+    convTitleEl.textContent = "New chat";
+    welcomeMessage();
+    renderRecents();
+    closeSidebarOnMobile();
+    input.focus();
+  }
+
+  async function loadConversation(id) {
+    try {
+      const res = await fetch(`/api/hive/conversations/${id}`);
+      if (res.status === 401) {
+        showSessionExpired();
+        return;
+      }
+      if (!res.ok) return;
+      const conv = await res.json();
+
+      activeId = conv.id;
+      convTitleEl.textContent = conv.title;
+      messagesEl.textContent = "";
+      for (const m of conv.messages) {
+        if (m.role === "user") {
+          addMessage({ role: "user", text: m.content });
+        } else {
+          renderAssistantEntry(m);
+        }
+      }
+      renderRecents();
+      closeSidebarOnMobile();
+    } catch {
+      // leave current view as-is on network failure
+    }
+  }
+
+  function showSessionExpired() {
+    addMessage({ role: "assistant", text: "Session expired — reload the page to sign back in.", isError: true });
+  }
+
   async function sendMessage(text) {
     addMessage({ role: "user", text });
     const pendingBubble = addMessage({ role: "assistant", text: "thinking...", pending: true });
@@ -189,14 +467,14 @@
 
     let data;
     try {
-      const res = await fetch("/api/hive/query", {
+      const res = await fetch(`/api/hive/conversations/${activeId || "new"}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (res.status === 401) {
         pendingBubble.remove();
-        addMessage({ role: "assistant", text: "Session expired — reload the page to sign back in.", isError: true });
+        showSessionExpired();
         return;
       }
       data = await res.json();
@@ -208,33 +486,13 @@
 
     pendingBubble.remove();
 
-    if (data.error) {
-      addMessage({
-        role: "assistant",
-        text: data.error,
-        meta: data.taskType ? `${data.taskType} — declined/rejected by provider` : undefined,
-        isError: true,
-      });
-      return;
-    }
+    const wasNew = !activeId;
+    activeId = data.conversationId;
+    convTitleEl.textContent = data.title;
+    upsertRecent({ id: data.conversationId, title: data.title, updatedAt: new Date().toISOString() });
+    if (wasNew) renderRecents();
 
-    if (data.failed || !data.content) {
-      addMessage({
-        role: "assistant",
-        text: "All providers for this task type failed or are unconfigured.",
-        meta: data.taskType ? `${data.taskType}: ${data.reason}` : undefined,
-        isError: true,
-      });
-      return;
-    }
-
-    const meta = `${data.taskType} (${data.reason}) → ${data.provider}/${data.model}`;
-
-    if (data.isImage) {
-      addImageMessage({ src: imageSrc(data.content), meta });
-    } else {
-      addMessage({ role: "assistant", text: data.content, meta });
-    }
+    renderAssistantEntry(data);
   }
 
   composer.addEventListener("submit", (event) => {
@@ -245,63 +503,16 @@
     sendMessage(text);
   });
 
-  function formatHistoryEntry(entry) {
-    const row = document.createElement("div");
-    row.className = "history-entry";
+  newChatBtn.addEventListener("click", newChat);
 
-    const top = document.createElement("div");
-    top.className = "h-top";
-    const time = document.createElement("span");
-    time.textContent = new Date(entry.timestamp).toLocaleString();
-    const status = document.createElement("span");
-    status.className = "h-status" + (entry.failed ? " failed" : "");
-    status.textContent = entry.failed ? "FAILED" : `${entry.usedProvider}/${entry.usedModel}`;
-    top.appendChild(time);
-    top.appendChild(status);
-
-    const tag = document.createElement("div");
-    tag.className = "h-top";
-    tag.textContent = `[${entry.taskType}]`;
-
-    const query = document.createElement("div");
-    query.className = "h-query";
-    query.textContent = entry.query;
-
-    row.appendChild(top);
-    row.appendChild(tag);
-    row.appendChild(query);
-    return row;
+  function closeSidebarOnMobile() {
+    sidebar.classList.remove("open");
   }
+  sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
 
-  async function loadHistory() {
-    historyList.textContent = "Loading...";
-    try {
-      const res = await fetch("/api/hive/history?limit=30");
-      const entries = await res.json();
-      historyList.textContent = "";
-      if (!Array.isArray(entries) || entries.length === 0) {
-        historyList.textContent = "No routing history yet.";
-        return;
-      }
-      for (const entry of entries) {
-        historyList.appendChild(formatHistoryEntry(entry));
-      }
-    } catch (err) {
-      historyList.textContent = `Failed to load history: ${err.message}`;
-    }
-  }
-
-  historyToggle.addEventListener("click", () => {
-    historyPanel.classList.toggle("hidden");
-    if (!historyPanel.classList.contains("hidden")) loadHistory();
-  });
-
-  historyRefresh.addEventListener("click", loadHistory);
-
-  addMessage({
-    role: "assistant",
-    text: "Hi! Ask me anything — I'll classify it and route it to whichever model is best suited.",
-  });
+  welcomeMessage();
+  renderRecents();
+  fetchRecents();
 </script>
 </body>
 </html>

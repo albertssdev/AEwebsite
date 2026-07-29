@@ -4,13 +4,18 @@ function modelFor(env, key, fallback) {
   return env[key] || fallback;
 }
 
+// Text generation takes the full conversation (`messages`: [{role: 'user'|'assistant',
+// content}], ending with the latest user turn) so a reopened chat has real memory.
+// Image generation only ever takes the latest prompt string — none of these REST APIs
+// support image-to-image edits from a text history, so a follow-up like "make it
+// bigger" has no way to reference the previous image through this path.
 export const PROVIDERS = {
   anthropic: {
     supportsImages: false,
     isConfigured: (env) => Boolean(env.ANTHROPIC_API_KEY),
     model: (env) => modelFor(env, "ANTHROPIC_MODEL", "claude-sonnet-5"),
 
-    async generateText(env, query) {
+    async generateText(env, messages) {
       const model = this.model(env);
       const json = await fetchJson("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -22,7 +27,7 @@ export const PROVIDERS = {
         body: JSON.stringify({
           model,
           max_tokens: 4096,
-          messages: [{ role: "user", content: query }],
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -41,7 +46,7 @@ export const PROVIDERS = {
     model: (env) => modelFor(env, "OPENAI_MODEL", "gpt-4o"),
     imageModel: (env) => modelFor(env, "OPENAI_IMAGE_MODEL", "dall-e-3"),
 
-    async generateText(env, query) {
+    async generateText(env, messages) {
       const model = this.model(env);
       const json = await fetchJson("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -49,7 +54,7 @@ export const PROVIDERS = {
           "content-type": "application/json",
           authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
-        body: JSON.stringify({ model, messages: [{ role: "user", content: query }] }),
+        body: JSON.stringify({ model, messages: messages.map((m) => ({ role: m.role, content: m.content })) }),
       });
 
       const content = json.choices?.[0]?.message?.content ?? "";
@@ -83,7 +88,7 @@ export const PROVIDERS = {
     // Hive routes current-events queries here — requires xAI's Responses API with
     // web_search/x_search tools (their older "Live Search" chat-completions flag was
     // retired), so this uses /v1/responses rather than /v1/chat/completions.
-    async generateText(env, query) {
+    async generateText(env, messages) {
       const model = this.model(env);
       const json = await fetchJson("https://api.x.ai/v1/responses", {
         method: "POST",
@@ -93,7 +98,7 @@ export const PROVIDERS = {
         },
         body: JSON.stringify({
           model,
-          input: [{ role: "user", content: query }],
+          input: messages.map((m) => ({ role: m.role, content: m.content })),
           tools: [{ type: "web_search" }, { type: "x_search" }],
         }),
       });
@@ -135,14 +140,19 @@ export const PROVIDERS = {
     isConfigured: (env) => Boolean(env.GOOGLE_API_KEY),
     model: (env) => modelFor(env, "GOOGLE_MODEL", "gemini-3.1-pro-preview"),
 
-    async generateText(env, query) {
+    async generateText(env, messages) {
       const model = this.model(env);
+      // Gemini uses "model" rather than "assistant" for the assistant role.
+      const contents = messages.map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
       const json = await fetchJson(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GOOGLE_API_KEY}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: query }] }] }),
+          body: JSON.stringify({ contents }),
         }
       );
 

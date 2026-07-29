@@ -20,10 +20,35 @@ export const ROUTES = {
   general: ["openai", "anthropic", "google"],
 };
 
-export async function route(env, query, forceProvider) {
-  const { taskType, reason } = classify(query);
-  const chain = forceProvider ? [forceProvider] : ROUTES[taskType];
-  const effectiveReason = forceProvider ? `forced to ${forceProvider} via override` : reason;
+/**
+ * `messages` is the full conversation so far ([{role, content}, ...], ending with the
+ * latest user turn) — the web UI (unlike the CLI) supports reopening a chat with real
+ * memory, so every provider call gets the whole thread, not just the latest message.
+ *
+ * `stickyProvider`, if given, is the provider that answered the previous turn in this
+ * conversation. The classifier only looks at the latest message, so a contextless
+ * follow-up like "make it bigger" has no keyword signal and would otherwise fall to
+ * the generic "general" chain and possibly land on a different provider than the one
+ * that has the actual context. When classification comes back "general" and a sticky
+ * provider is available, that provider is tried first instead.
+ */
+export async function route(env, messages, forceProvider, stickyProvider) {
+  const latestUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  const { taskType, reason } = classify(latestUserText);
+
+  let chain;
+  let effectiveReason;
+  if (forceProvider) {
+    chain = [forceProvider];
+    effectiveReason = `forced to ${forceProvider} via override`;
+  } else if (taskType === "general" && stickyProvider && PROVIDERS[stickyProvider]?.isConfigured(env)) {
+    chain = [stickyProvider, ...ROUTES[taskType].filter((p) => p !== stickyProvider)];
+    effectiveReason = `continuing conversation with ${stickyProvider} (no strong task signal in this message)`;
+  } else {
+    chain = ROUTES[taskType];
+    effectiveReason = reason;
+  }
+
   const attempts = [];
 
   for (const providerName of chain) {
@@ -37,8 +62,8 @@ export async function route(env, query, forceProvider) {
     try {
       const useImage = taskType === "image" && provider.supportsImages && provider.generateImage;
       const result = useImage
-        ? await provider.generateImage(env, query)
-        : await provider.generateText(env, query);
+        ? await provider.generateImage(env, latestUserText)
+        : await provider.generateText(env, messages);
 
       attempts.push({ provider: providerName, ok: true });
       return { taskType, reason: effectiveReason, attempts, result, failed: false };

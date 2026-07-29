@@ -1,6 +1,6 @@
 import { classify } from "./hive/classifier.js";
 import { route } from "./hive/router.js";
-import { logRoute, readRecentLogs } from "./hive/history.js";
+import { makeTitle, listConversations, getConversation, saveConversation, deleteConversation } from "./hive/conversations.js";
 import { PROVIDER_NAMES } from "./hive/adapters.js";
 
 const GATE_COOKIE = "site_gate";
@@ -11,7 +11,7 @@ function isGatedPath(pathname) {
 }
 
 function isHiveApiPath(pathname) {
-  return pathname === "/api/hive/query" || pathname === "/api/hive/history";
+  return pathname.startsWith("/api/hive/");
 }
 
 function json(data, status = 200) {
@@ -181,7 +181,25 @@ export default {
         return json({ error: "unauthorized" }, 401);
       }
 
-      if (url.pathname === "/api/hive/query" && request.method === "POST") {
+      if (url.pathname === "/api/hive/conversations" && request.method === "GET") {
+        const limit = Number(url.searchParams.get("limit")) || 50;
+        return json(await listConversations(env, limit));
+      }
+
+      const convMatch = url.pathname.match(/^\/api\/hive\/conversations\/([^/]+)(?:\/(messages))?$/);
+
+      if (convMatch && !convMatch[2] && request.method === "GET") {
+        const conv = await getConversation(env, convMatch[1]);
+        if (!conv) return json({ error: "not found" }, 404);
+        return json(conv);
+      }
+
+      if (convMatch && !convMatch[2] && request.method === "DELETE") {
+        await deleteConversation(env, convMatch[1]);
+        return json({ ok: true });
+      }
+
+      if (convMatch && convMatch[2] === "messages" && request.method === "POST") {
         let body;
         try {
           body = await request.json();
@@ -199,41 +217,61 @@ export default {
           return json({ error: `unknown provider "${forceModel}"` }, 400);
         }
 
+        const id = convMatch[1];
+        const now = new Date().toISOString();
+        let conv = id !== "new" ? await getConversation(env, id) : null;
+        if (!conv) {
+          conv = { id: crypto.randomUUID(), title: makeTitle(message), createdAt: now, updatedAt: now, messages: [] };
+        }
+        conv.messages.push({ role: "user", content: message, timestamp: now });
+
+        // The last assistant turn's provider, used as a routing hint for contextless
+        // follow-ups ("make it bigger") that carry no classifiable signal of their own.
+        const lastAssistant = [...conv.messages].reverse().find((m) => m.role === "assistant" && m.provider);
+        const stickyProvider = lastAssistant?.provider;
+        const modelMessages = conv.messages.map((m) => ({ role: m.role, content: m.content }));
+
+        let result;
+        let routeError = null;
         try {
-          const result = await route(env, message, forceModel);
-          await logRoute(env, message, result);
-          return json({
-            taskType: result.taskType,
-            reason: result.reason,
-            attempts: result.attempts,
-            failed: result.failed,
-            provider: result.result?.provider ?? null,
-            model: result.result?.model ?? null,
-            content: result.result?.content ?? null,
-            isImage: result.taskType === "image" && !result.failed,
-            error: null,
-          });
+          result = await route(env, modelMessages, forceModel, stickyProvider);
         } catch (err) {
           // Not a technical failure — the provider rejected the request outright.
           // Surface it as an error rather than silently trying another provider.
           const { taskType, reason } = classify(message);
-          return json({
-            taskType,
-            reason,
-            attempts: [],
-            failed: true,
-            provider: null,
-            model: null,
-            content: null,
-            isImage: false,
-            error: err instanceof Error ? err.message : String(err),
-          });
+          result = { taskType, reason, attempts: [], failed: true };
+          routeError = err instanceof Error ? err.message : String(err);
         }
-      }
 
-      if (url.pathname === "/api/hive/history" && request.method === "GET") {
-        const limit = Number(url.searchParams.get("limit")) || 20;
-        return json(await readRecentLogs(env, limit));
+        const assistantEntry = {
+          role: "assistant",
+          content: result.result?.content ?? null,
+          timestamp: new Date().toISOString(),
+          taskType: result.taskType,
+          reason: result.reason,
+          provider: result.result?.provider ?? null,
+          model: result.result?.model ?? null,
+          isImage: result.taskType === "image" && !result.failed,
+          failed: result.failed,
+          error: routeError,
+        };
+        conv.messages.push(assistantEntry);
+        conv.updatedAt = assistantEntry.timestamp;
+        await saveConversation(env, conv);
+
+        return json({
+          conversationId: conv.id,
+          title: conv.title,
+          taskType: result.taskType,
+          reason: result.reason,
+          attempts: result.attempts,
+          failed: result.failed,
+          provider: assistantEntry.provider,
+          model: assistantEntry.model,
+          content: assistantEntry.content,
+          isImage: assistantEntry.isImage,
+          error: routeError,
+        });
       }
 
       return json({ error: "not found" }, 404);
