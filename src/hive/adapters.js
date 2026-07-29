@@ -112,12 +112,24 @@ export const PROVIDERS = {
           model,
           input: messages.map((m) => ({ role: m.role, content: m.content })),
           tools: [{ type: "web_search" }, { type: "x_search" }],
+          // "medium" balances a visible reasoning summary against added cost/latency
+          // on every request — reasoning tokens bill the same regardless of effort.
+          reasoning: { effort: "medium" },
         }),
       });
 
+      const outputItems = Array.isArray(json.output) ? json.output : [];
+
+      const thinking = outputItems
+        .filter((item) => item?.type === "reasoning")
+        .flatMap((item) => item?.summary ?? [])
+        .filter((s) => s?.type === "summary_text" && s.text)
+        .map((s) => s.text)
+        .join("\n\n");
+
       let content = json.output_text ?? "";
-      if (!content && Array.isArray(json.output)) {
-        content = json.output
+      if (!content) {
+        content = outputItems
           .flatMap((item) => item?.content ?? [])
           .filter((c) => c?.type === "output_text" || c?.type === "text")
           .map((c) => c.text)
@@ -127,7 +139,7 @@ export const PROVIDERS = {
         content += `\n\nSources:\n${json.citations.map((c) => `- ${c}`).join("\n")}`;
       }
 
-      return { content, provider: "xai", model };
+      return { content, provider: "xai", model, thinking: thinking || undefined };
     },
 
     async generateImage(env, prompt) {
@@ -164,12 +176,24 @@ export const PROVIDERS = {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ contents }),
+          // gemini-3.1-pro-preview thinks by default and can't turn it off; this just
+          // asks for the thought summary text instead of a "thought": true block with
+          // no readable content.
+          body: JSON.stringify({ contents, generationConfig: { thinkingConfig: { includeThoughts: true } } }),
         }
       );
 
-      const content = (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
-      return { content, provider: "google", model };
+      const parts = json.candidates?.[0]?.content?.parts ?? [];
+      const thinking = parts
+        .filter((p) => p.thought && p.text)
+        .map((p) => p.text)
+        .join("\n\n");
+      const content = parts
+        .filter((p) => !p.thought)
+        .map((p) => p.text ?? "")
+        .join("");
+
+      return { content, provider: "google", model, thinking: thinking || undefined };
     },
   },
 };
