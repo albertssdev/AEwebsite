@@ -17,7 +17,7 @@ export const ROUTES = {
   brainstorming: ["openai", "anthropic", "google"],
   multimodal: ["openai", "google"],
   long_context: ["google", "openai"],
-  general: ["openai", "anthropic", "google"],
+  general: ["anthropic", "openai", "google"],
 };
 
 /**
