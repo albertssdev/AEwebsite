@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M13,56 A19,32 0 0 1 51,56 L13,56 Z" fill="#f5b942"/>
-  <path d="M24,31 Q32,33 40,31" fill="none" stroke="#d9971f" stroke-width="2" stroke-linecap="round"/>
-  <path d="M19,39 Q32,42 45,39" fill="none" stroke="#d9971f" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M16,47 Q32,50 48,47" fill="none" stroke="#d9971f" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M14.5,52.5 Q32,56 49.5,52.5" fill="none" stroke="#d9971f" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M13,56 A19,22 0 0 1 51,56 L13,56 Z" fill="#f5b942"/>
+  <path d="M19,40 Q32,43 45,40" fill="none" stroke="#d9971f" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M15,46 Q32,49.5 49,46" fill="none" stroke="#d9971f" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M14,52 Q32,55.5 50,52" fill="none" stroke="#d9971f" stroke-width="2.4" stroke-linecap="round"/>
   <ellipse cx="32" cy="51.5" rx="4.5" ry="3.3" fill="#4a2f12"/>
 </svg>
