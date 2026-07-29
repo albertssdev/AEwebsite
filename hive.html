@@ -164,6 +164,28 @@
   .message img { max-width: 100%; border-radius: 6px; display: block; }
   .message-meta { margin-top: 0.4rem; font-size: 0.72rem; color: var(--text-dim); }
   .message.pending .message-meta { font-style: italic; }
+  .msg-details { font-size: 0.78rem; color: var(--text-dim); }
+  .msg-details + .msg-details { margin-top: 0.3rem; }
+  .thinking-details { margin-bottom: 0.5rem; }
+  .steps-details { margin-top: 0.4rem; }
+  .msg-details summary {
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    list-style: none;
+  }
+  .msg-details summary::-webkit-details-marker { display: none; }
+  .msg-details summary::before { content: "▸ "; }
+  .msg-details[open] summary::before { content: "▾ "; }
+  .msg-details-body {
+    margin-top: 0.35rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--sidebar-bg);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  .thinking-details .msg-details-body { font-style: italic; }
   .composer { display: flex; gap: 0.6rem; padding: 1rem 1.25rem; background: #fff; }
   .composer input {
     flex: 1;
@@ -259,9 +281,35 @@
     });
   }
 
-  function addMessage({ role, text, meta, isError, pending }) {
+  function addDetails(bubble, label, text, extraClass) {
+    if (!text) return;
+    const details = document.createElement("details");
+    details.className = "msg-details" + (extraClass ? ` ${extraClass}` : "");
+    const summary = document.createElement("summary");
+    summary.textContent = label;
+    const body = document.createElement("div");
+    body.className = "msg-details-body";
+    body.textContent = text;
+    details.appendChild(summary);
+    details.appendChild(body);
+    bubble.appendChild(details);
+  }
+
+  function stepsText(entry) {
+    const lines = [];
+    if (entry.taskType) lines.push(`Classified as: ${entry.taskType} (${entry.reason || "no reason given"})`);
+    for (const a of entry.attempts || []) {
+      lines.push(a.ok ? `→ ${a.provider}: ok` : `→ ${a.provider}: failed (${a.error})`);
+    }
+    if (entry.provider) lines.push(`Answered by ${entry.provider}/${entry.model}`);
+    return lines.join("\n");
+  }
+
+  function addMessage({ role, text, meta, isError, pending, thinking, steps }) {
     const bubble = document.createElement("div");
     bubble.className = `message ${role}` + (isError ? " error" : "") + (pending ? " pending" : "");
+
+    if (thinking) addDetails(bubble, "Thinking", thinking, "thinking-details");
 
     const body = document.createElement("div");
     body.textContent = text;
@@ -274,12 +322,14 @@
       bubble.appendChild(metaEl);
     }
 
+    if (steps) addDetails(bubble, "Steps", steps, "steps-details");
+
     messagesEl.appendChild(bubble);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return bubble;
   }
 
-  function addImageMessage({ src, meta }) {
+  function addImageMessage({ src, meta, steps }) {
     const bubble = document.createElement("div");
     bubble.className = "message assistant";
 
@@ -295,6 +345,8 @@
       bubble.appendChild(metaEl);
     }
 
+    if (steps) addDetails(bubble, "Steps", steps, "steps-details");
+
     messagesEl.appendChild(bubble);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -305,12 +357,15 @@
   }
 
   function renderAssistantEntry(entry) {
+    const steps = stepsText(entry);
+
     if (entry.error) {
       addMessage({
         role: "assistant",
         text: entry.error,
         meta: entry.taskType ? `${entry.taskType} — declined/rejected by provider` : undefined,
         isError: true,
+        steps,
       });
       return;
     }
@@ -320,14 +375,15 @@
         text: "All providers for this task type failed or are unconfigured.",
         meta: entry.taskType ? `${entry.taskType}: ${entry.reason}` : undefined,
         isError: true,
+        steps,
       });
       return;
     }
     const meta = `${entry.taskType} (${entry.reason}) → ${entry.provider}/${entry.model}`;
     if (entry.isImage) {
-      addImageMessage({ src: imageSrc(entry.content), meta });
+      addImageMessage({ src: imageSrc(entry.content), meta, steps });
     } else {
-      addMessage({ role: "assistant", text: entry.content, meta });
+      addMessage({ role: "assistant", text: entry.content, meta, thinking: entry.thinking, steps });
     }
   }
 

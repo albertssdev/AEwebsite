@@ -246,9 +246,11 @@ export default {
         const assistantEntry = {
           role: "assistant",
           content: result.result?.content ?? null,
+          thinking: result.result?.thinking ?? null,
           timestamp: new Date().toISOString(),
           taskType: result.taskType,
           reason: result.reason,
+          attempts: result.attempts,
           provider: result.result?.provider ?? null,
           model: result.result?.model ?? null,
           isImage: result.taskType === "image" && !result.failed,
@@ -269,6 +271,7 @@ export default {
           provider: assistantEntry.provider,
           model: assistantEntry.model,
           content: assistantEntry.content,
+          thinking: assistantEntry.thinking,
           isImage: assistantEntry.isImage,
           error: routeError,
         });

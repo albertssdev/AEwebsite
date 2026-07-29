@@ -26,17 +26,29 @@ export const PROVIDERS = {
         },
         body: JSON.stringify({
           model,
-          max_tokens: 4096,
+          // Thinking tokens count toward max_tokens alongside the reply itself, so
+          // this needs real headroom beyond a plain-text response's usual budget.
+          max_tokens: 16000,
+          // claude-sonnet-5 already thinks by default; display defaults to "omitted"
+          // (empty thinking text) there, so this just makes the summary visible.
+          // Claude decides per-request whether to think at all — trivial queries may
+          // produce no thinking block, which is fine and handled below.
+          thinking: { type: "adaptive", display: "summarized" },
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
-      const content = (json.content || [])
+      const blocks = json.content || [];
+      const thinking = blocks
+        .filter((block) => block.type === "thinking" && block.thinking)
+        .map((block) => block.thinking)
+        .join("\n\n");
+      const content = blocks
         .filter((block) => block.type === "text")
         .map((block) => block.text)
         .join("\n");
 
-      return { content, provider: "anthropic", model };
+      return { content, provider: "anthropic", model, thinking: thinking || undefined };
     },
   },
 
