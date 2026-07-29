@@ -5,11 +5,11 @@
     </clipPath>
   </defs>
   <g clip-path="url(#hive-outline)">
-    <rect x="0" y="34" width="64" height="4.4" fill="#f5b942"/>
-    <rect x="0" y="38.4" width="64" height="4.4" fill="#f7c463"/>
-    <rect x="0" y="42.8" width="64" height="4.4" fill="#f5b942"/>
-    <rect x="0" y="47.2" width="64" height="4.4" fill="#f7c463"/>
-    <rect x="0" y="51.6" width="64" height="4.4" fill="#f5b942"/>
+    <ellipse cx="32" cy="54" rx="19" ry="7" fill="#f5b942"/>
+    <ellipse cx="32" cy="48" rx="18" ry="7" fill="#f7c463"/>
+    <ellipse cx="32" cy="42.5" rx="15.5" ry="6.5" fill="#f5b942"/>
+    <ellipse cx="32" cy="38" rx="11.5" ry="5.5" fill="#f7c463"/>
+    <ellipse cx="32" cy="35" rx="7" ry="4" fill="#f5b942"/>
   </g>
   <ellipse cx="32" cy="51.5" rx="4.5" ry="3.3" fill="#4a2f12"/>
 </svg>
