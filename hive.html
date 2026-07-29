@@ -27,7 +27,7 @@
     color: var(--dark);
     background: var(--light);
   }
-  .shell { display: flex; height: 100vh; overflow: hidden; }
+  .shell { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
   /* Sidebar */
   .sidebar {
@@ -102,7 +102,7 @@
     text-overflow: ellipsis;
   }
   .recent-item .recent-time { font-size: 0.7rem; color: var(--text-dim); }
-  .recent-menu-wrap { position: relative; flex-shrink: 0; }
+  .recent-menu-wrap { flex-shrink: 0; }
   .menu-btn {
     display: none;
     align-items: center;
@@ -119,17 +119,19 @@
   }
   .recent-item:hover .menu-btn { display: flex; }
   .menu-btn:hover { background: #ddd8; color: var(--dark); }
+  /* Fixed to the viewport (positioned in JS from the trigger button's own
+     rect) rather than absolute inside the scrolling recents list — an
+     absolutely-positioned menu near the bottom of a long, scrolled list
+     would otherwise get clipped by the list's own overflow:auto. */
   .recent-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    margin-top: 2px;
+    position: fixed;
+    visibility: hidden;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    min-width: 120px;
-    z-index: 30;
+    min-width: 130px;
+    z-index: 40;
     overflow: hidden;
   }
   .menu-item {
@@ -268,6 +270,14 @@
     cursor: pointer;
   }
 
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 19;
+  }
+
   @media (max-width: 760px) {
     .icon-button { display: inline-flex; align-items: center; }
     .sidebar {
@@ -279,6 +289,11 @@
       box-shadow: 2px 0 12px rgba(0,0,0,0.12);
     }
     .sidebar.open { transform: translateX(0); }
+    .sidebar.open ~ .sidebar-backdrop { display: block; }
+    /* No :hover on touch devices, so the menu trigger can't rely on it to
+       become visible — always show it here, with a bigger tap target. */
+    .menu-btn { display: flex; width: 32px; height: 32px; font-size: 1.1rem; }
+    .doctor-btn, .new-chat-btn { padding-top: 0.75rem; padding-bottom: 0.75rem; }
   }
 </style>
 </head>
@@ -296,6 +311,7 @@
       <div id="recents-list" class="recents-list"></div>
       <button id="doctor-btn" class="doctor-btn" type="button">🩺 Check providers</button>
     </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <div class="main">
       <header class="main-header">
@@ -330,6 +346,7 @@
   const convTitleEl = document.getElementById("conv-title");
   const sidebar = document.getElementById("sidebar");
   const sidebarToggle = document.getElementById("sidebar-toggle");
+  const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
   let activeId = null;
   let recents = [];
@@ -491,70 +508,95 @@
       textWrap.appendChild(title);
       textWrap.appendChild(time);
 
-      const menuWrap = document.createElement("div");
-      menuWrap.className = "recent-menu-wrap";
-
       const menuBtn = document.createElement("button");
       menuBtn.type = "button";
       menuBtn.className = "menu-btn";
       menuBtn.textContent = "⋮";
       menuBtn.setAttribute("aria-label", "Conversation options");
-
-      const menu = document.createElement("div");
-      menu.className = "recent-menu";
-      menu.hidden = true;
-
-      const renameBtn = document.createElement("button");
-      renameBtn.type = "button";
-      renameBtn.className = "menu-item";
-      renameBtn.textContent = "Rename";
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.type = "button";
-      deleteBtn.className = "menu-item menu-item-danger";
-      deleteBtn.textContent = "Delete";
-
       menuBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const willOpen = menu.hidden;
-        closeOpenMenu();
-        if (willOpen) {
-          menu.hidden = false;
-          openMenuEl = menu;
-        }
+        toggleRecentMenu(menuBtn, conv, title);
       });
-      renameBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        closeOpenMenu();
-        startRename(conv, title);
-      });
-      deleteBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        closeOpenMenu();
-        removeConversation(conv.id);
-      });
-
-      menu.appendChild(renameBtn);
-      menu.appendChild(deleteBtn);
-      menuWrap.appendChild(menuBtn);
-      menuWrap.appendChild(menu);
 
       item.appendChild(bullet);
       item.appendChild(textWrap);
-      item.appendChild(menuWrap);
+      item.appendChild(menuBtn);
       item.addEventListener("click", () => loadConversation(conv.id));
       recentsList.appendChild(item);
     }
   }
 
-  let openMenuEl = null;
+  // A single floating menu shared by every recent-item, positioned in JS from
+  // whichever trigger button was clicked. Fixed-position and appended to body
+  // (not nested in the scrolling recents list) so it can never be clipped by
+  // that list's overflow, and can flip upward when there's no room below.
+  const recentMenu = document.createElement("div");
+  recentMenu.className = "recent-menu";
+  recentMenu.hidden = true;
+  const renameMenuBtn = document.createElement("button");
+  renameMenuBtn.type = "button";
+  renameMenuBtn.className = "menu-item";
+  renameMenuBtn.textContent = "Rename";
+  const deleteMenuBtn = document.createElement("button");
+  deleteMenuBtn.type = "button";
+  deleteMenuBtn.className = "menu-item menu-item-danger";
+  deleteMenuBtn.textContent = "Delete";
+  recentMenu.appendChild(renameMenuBtn);
+  recentMenu.appendChild(deleteMenuBtn);
+  document.body.appendChild(recentMenu);
+
+  let openMenuConv = null;
+  let openMenuTitleEl = null;
+
   function closeOpenMenu() {
-    if (openMenuEl) {
-      openMenuEl.hidden = true;
-      openMenuEl = null;
-    }
+    recentMenu.hidden = true;
+    recentMenu.style.visibility = "hidden";
+    openMenuConv = null;
+    openMenuTitleEl = null;
   }
+
+  function toggleRecentMenu(btn, conv, titleEl) {
+    const reopening = openMenuConv === conv && !recentMenu.hidden;
+    closeOpenMenu();
+    if (reopening) return;
+
+    openMenuConv = conv;
+    openMenuTitleEl = titleEl;
+    recentMenu.hidden = false;
+    recentMenu.style.visibility = "hidden";
+
+    const btnRect = btn.getBoundingClientRect();
+    const menuRect = recentMenu.getBoundingClientRect();
+    let top = btnRect.bottom + 4;
+    if (top + menuRect.height > window.innerHeight - 8) {
+      top = btnRect.top - menuRect.height - 4;
+    }
+    let left = btnRect.right - menuRect.width;
+    left = Math.max(8, Math.min(left, window.innerWidth - menuRect.width - 8));
+
+    recentMenu.style.top = `${Math.max(8, top)}px`;
+    recentMenu.style.left = `${left}px`;
+    recentMenu.style.visibility = "visible";
+  }
+
+  renameMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const conv = openMenuConv;
+    const titleEl = openMenuTitleEl;
+    closeOpenMenu();
+    if (conv && titleEl) startRename(conv, titleEl);
+  });
+  deleteMenuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const conv = openMenuConv;
+    closeOpenMenu();
+    if (conv) removeConversation(conv.id);
+  });
+  recentMenu.addEventListener("click", (e) => e.stopPropagation());
+
   document.addEventListener("click", closeOpenMenu);
+  recentsList.addEventListener("scroll", closeOpenMenu);
+  window.addEventListener("resize", closeOpenMenu);
 
   function startRename(conv, titleEl) {
     const input = document.createElement("input");
@@ -771,6 +813,7 @@
     sidebar.classList.remove("open");
   }
   sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+  sidebarBackdrop.addEventListener("click", closeSidebarOnMobile);
 
   welcomeMessage();
   renderRecents();
