@@ -139,7 +139,11 @@ export default {
 
     if (url.hostname === "www.albertselectric.net") {
       url.hostname = "albertselectric.net";
-      return Response.redirect(url.toString(), 301);
+      // 308 (not 301/302) is required here: 301/302 redirects silently downgrade
+      // a POST to a GET in virtually every browser, which would drop the gate
+      // password entirely for anyone submitting the login form from "www.".
+      // 308 preserves the method and body.
+      return Response.redirect(url.toString(), 308);
     }
 
     if (url.pathname === "/gate-auth" && request.method === "POST") {
