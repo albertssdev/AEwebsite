@@ -62,7 +62,14 @@ async function checkGate(request, env) {
   return verifyGateToken(token, env.GATE_SIGNING_KEY);
 }
 
+// Redirect target after a successful gate-auth. Deliberately NOT a general
+// open redirect: relative site paths are allowed, plus one specific
+// whitelisted external destination (the gated Autocrunch link), never an
+// arbitrary "next" value from the request.
+const ALLOWED_EXTERNAL_NEXT = new Set(["https://autocrunch.albertselectric.net/"]);
+
 function safeNextPath(next) {
+  if (ALLOWED_EXTERNAL_NEXT.has(next)) return next;
   if (!next || !next.startsWith("/") || next.startsWith("//")) return "/";
   return next;
 }
@@ -157,7 +164,11 @@ export default {
         headers.set("Location", next);
         headers.append(
           "Set-Cookie",
-          `${GATE_COOKIE}=${token}; Path=/; Max-Age=${GATE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
+          // Domain=.albertselectric.net (vs. host-only) so the gate cookie is
+          // also sent to autocrunch.albertselectric.net, which independently
+          // verifies it against the same GATE_SIGNING_KEY -- see that
+          // worker's src/index.js.
+          `${GATE_COOKIE}=${token}; Domain=.albertselectric.net; Path=/; Max-Age=${GATE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
         );
         return new Response(null, { status: 302, headers });
       }
