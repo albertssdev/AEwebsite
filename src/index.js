@@ -342,6 +342,13 @@ export default {
       return json({ error: "not found" }, 404);
     }
 
+    if (url.pathname === "/service-area" || url.pathname === "/service-area.html") {
+      // Service Area page merged into About — redirect old links/bookmarks instead
+      // of letting them 404.
+      const aboutUrl = new URL("/about.html#service-area", url);
+      return Response.redirect(aboutUrl.toString(), 301);
+    }
+
     if (url.pathname === "/api/reviews" && request.method === "GET") {
       let cached = await env.REVIEWS_KV.get("reviews");
       if (!cached) {

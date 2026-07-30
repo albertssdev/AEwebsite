@@ -22,7 +22,7 @@ Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsit
 
 ## Project structure
 
-- `index.html`, `about.html`, `services.html`, `service-area.html`, `contact.html` — the business site
+- `index.html`, `about.html`, `services.html`, `contact.html` — the business site (Service Area is a section on About; `/service-area` redirects there)
 - `assets/` — CSS, JS, images
 - `src/index.js` — Worker: handles the `www` redirect and the password gate
 - `gate.html` — password page for gated links
