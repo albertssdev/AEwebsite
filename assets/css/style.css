@@ -199,8 +199,8 @@ header p { font-size: 1.1rem; margin-bottom: 1.5rem; }
 }
 .info-card h3 { margin-top: 0; color: var(--accent); }
 .info-card p { overflow-wrap: break-word; }
-.info-card a { color: var(--dark); text-decoration: none; font-weight: bold; }
-.info-card a:hover { color: var(--accent); }
+.info-card a { color: var(--accent); text-decoration: none; font-weight: bold; }
+.info-card a:hover { text-decoration: underline; }
 
 /* BOTTOM CTA */
 .bottom-cta {
