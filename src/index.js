@@ -108,6 +108,43 @@ function dedupeConsecutiveFirstNames(reviews) {
   return result;
 }
 
+const VISIT_TRACKED_PATHS = new Set([
+  "/", "/index.html",
+  "/about", "/about.html",
+  "/services", "/services.html",
+  "/contact", "/contact.html",
+]);
+
+async function recordVisit(env, ctx) {
+  const day = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const key = `visits:${day}`;
+  ctx.waitUntil(
+    (async () => {
+      const current = Number(await env.VISITS_KV.get(key)) || 0;
+      const count = current + 1;
+      // expirationTtl keeps exactly a rolling 365-day window without any
+      // separate pruning logic — old day-keys just fall out of KV on their own.
+      await env.VISITS_KV.put(key, String(count), {
+        expirationTtl: 365 * 24 * 60 * 60,
+        metadata: { count },
+      });
+    })()
+  );
+}
+
+async function totalVisits(env) {
+  let total = 0;
+  let cursor;
+  do {
+    const page = await env.VISITS_KV.list({ prefix: "visits:", cursor });
+    for (const key of page.keys) {
+      total += key.metadata?.count ?? 0;
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return total;
+}
+
 async function fetchGoogleReviews(env) {
   const res = await fetch(`https://places.googleapis.com/v1/places/${env.GOOGLE_PLACE_ID}`, {
     headers: {
@@ -141,7 +178,7 @@ export default {
     await env.REVIEWS_KV.put("reviews", JSON.stringify(data));
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.hostname === "www.albertselectric.net") {
@@ -166,7 +203,7 @@ export default {
           "Set-Cookie",
           // Domain=.albertselectric.net (vs. host-only) so the gate cookie is
           // also sent to autocrunch.albertselectric.net, which independently
-          // verifies it against the same GATE_SIGNING_KEY -- see that
+          // verifies it against the same GATE_SIGNING_KEY, see that
           // worker's src/index.js.
           `${GATE_COOKIE}=${token}; Domain=.albertselectric.net; Path=/; Max-Age=${GATE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
         );
@@ -370,6 +407,15 @@ export default {
           "Cache-Control": "public, max-age=3600",
         },
       });
+    }
+
+    if (url.pathname === "/api/visits" && request.method === "GET") {
+      const total = await totalVisits(env);
+      return json({ total, days: 365 });
+    }
+
+    if (request.method === "GET" && VISIT_TRACKED_PATHS.has(url.pathname)) {
+      await recordVisit(env, ctx);
     }
 
     return env.ASSETS.fetch(request);
