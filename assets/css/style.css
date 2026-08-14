@@ -300,6 +300,18 @@ footer {
   padding: 1.5rem 0;
   text-align: center;
 }
+.social-links {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+.social-links a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 0.6rem;
+  font-weight: bold;
+}
+.social-links a:hover { text-decoration: underline; }
+
 .footer-links {
   margin: 0.5rem 0 0;
   padding: 0 1rem;
