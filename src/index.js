@@ -26,9 +26,29 @@ const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 };
 
-function withSecurityHeaders(response) {
+// Scoped to CSP_SCOPED_PATHS (the four business pages) rather than applied
+// site-wide — see the comment on that constant for why.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' https://secure.copilotcrm.com",
+  "style-src 'self' https://secure.copilotcrm.com",
+  "img-src 'self'",
+  "font-src 'self'",
+  "connect-src 'self' https://secure.copilotcrm.com",
+  "frame-src https://secure.copilotcrm.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://secure.copilotcrm.com",
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+function withSecurityHeaders(response, extra = {}) {
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+  for (const [key, value] of Object.entries(extra)) {
     headers.set(key, value);
   }
   return new Response(response.body, {
@@ -133,7 +153,12 @@ function dedupeConsecutiveFirstNames(reviews) {
   return result;
 }
 
-const VISIT_TRACKED_PATHS = new Set([
+// Reused for both visit tracking and CSP scoping — these are the four public
+// business pages. The gate, hive, LCRCC, and sermon-search pages elsewhere on
+// this domain rely on inline scripts and third-party CDNs (Tailwind, fuse.js,
+// Facebook SDK) a strict CSP would break, and are already password-gated /
+// noindex, so a site-wide policy isn't worth the trade-off.
+const CSP_SCOPED_PATHS = new Set([
   "/", "/index.html",
   "/about", "/about.html",
   "/services", "/services.html",
@@ -443,10 +468,14 @@ export default {
       return json({ total, days: 365 });
     }
 
-    if (request.method === "GET" && VISIT_TRACKED_PATHS.has(url.pathname)) {
+    if (request.method === "GET" && CSP_SCOPED_PATHS.has(url.pathname)) {
       await recordVisit(env, ctx);
     }
 
-    return withSecurityHeaders(await env.ASSETS.fetch(request));
+    const assetResponse = await env.ASSETS.fetch(request);
+    const extra = CSP_SCOPED_PATHS.has(url.pathname)
+      ? { "Content-Security-Policy": CONTENT_SECURITY_POLICY }
+      : {};
+    return withSecurityHeaders(assetResponse, extra);
   },
 };
