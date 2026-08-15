@@ -24,6 +24,10 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  // "same-site" (not "same-origin") so the related autocrunch.albertselectric.net
+  // subdomain can still load this site's resources cross-origin if it ever needs to.
+  "Cross-Origin-Resource-Policy": "same-site",
 };
 
 // Scoped to CSP_SCOPED_PATHS (the four business pages) rather than applied
