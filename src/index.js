@@ -433,6 +433,18 @@ export default {
       return json({ error: "not found" }, 404);
     }
 
+    if (url.pathname === "/.well-known/security.txt" || url.pathname === "/security.txt") {
+      // Served directly rather than as a static asset — Workers' asset
+      // serving has had inconsistent handling of dotfile paths like
+      // /.well-known/, so this guarantees it resolves regardless.
+      const body = [
+        "Contact: mailto:albertselectricoffice@gmail.com",
+        "Expires: 2027-08-14T00:00:00.000Z",
+        "Preferred-Languages: en",
+      ].join("\n") + "\n";
+      return withSecurityHeaders(new Response(body, { headers: { "Content-Type": "text/plain" } }));
+    }
+
     if (url.pathname === "/service-area" || url.pathname === "/service-area.html") {
       // Service Area page merged into About — redirect old links/bookmarks instead
       // of letting them 404.

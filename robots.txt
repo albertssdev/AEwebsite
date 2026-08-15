@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /gate-auth
 
 Sitemap: https://albertselectric.net/sitemap.xml
