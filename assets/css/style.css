@@ -68,6 +68,7 @@ header {
 }
 
 header h1 { margin-bottom: 0.5rem; font-size: 2.1rem; }
+header .tagline { color: var(--accent); font-weight: bold; font-size: 1.1rem; margin: 0 0 0.5rem; }
 header p { font-size: 1.1rem; margin-bottom: 1.5rem; }
 
 .cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
