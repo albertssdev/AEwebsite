@@ -15,11 +15,36 @@ function isHiveApiPath(pathname) {
   return pathname.startsWith("/api/hive/");
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
+// Applied to every page/asset/API response. HSTS max-age is intentionally
+// set here rather than left to Cloudflare's dashboard-level HSTS toggle —
+// no `preload` directive, since submitting to the browser preload list is
+// hard to reverse and nobody's asked for that yet.
+const SECURITY_HEADERS = {
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+};
+
+function withSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
+}
+
+function json(data, status = 200) {
+  return withSecurityHeaders(
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    })
+  );
 }
 
 async function hmac(key, message) {
@@ -395,18 +420,22 @@ export default {
           await env.REVIEWS_KV.put("reviews", cached);
         } catch (err) {
           console.error("fetchGoogleReviews failed:", err.message);
-          return new Response(JSON.stringify({ error: "unavailable" }), {
-            status: 502,
-            headers: { "Content-Type": "application/json" },
-          });
+          return withSecurityHeaders(
+            new Response(JSON.stringify({ error: "unavailable" }), {
+              status: 502,
+              headers: { "Content-Type": "application/json" },
+            })
+          );
         }
       }
-      return new Response(cached, {
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=3600",
-        },
-      });
+      return withSecurityHeaders(
+        new Response(cached, {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=3600",
+          },
+        })
+      );
     }
 
     if (url.pathname === "/api/visits" && request.method === "GET") {
@@ -418,6 +447,6 @@ export default {
       await recordVisit(env, ctx);
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await env.ASSETS.fetch(request));
   },
 };
