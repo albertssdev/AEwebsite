@@ -30,11 +30,11 @@ const SECURITY_HEADERS = {
 // site-wide — see the comment on that constant for why.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self' https://secure.copilotcrm.com",
+  "script-src 'self' https://secure.copilotcrm.com https://static.cloudflareinsights.com",
   "style-src 'self' https://secure.copilotcrm.com",
   "img-src 'self'",
   "font-src 'self'",
-  "connect-src 'self' https://secure.copilotcrm.com",
+  "connect-src 'self' https://secure.copilotcrm.com https://cloudflareinsights.com",
   "frame-src https://secure.copilotcrm.com",
   "object-src 'none'",
   "base-uri 'self'",
