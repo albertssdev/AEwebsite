@@ -364,11 +364,56 @@
 
         function handleEmailSignup(e) {
             e.preventDefault();
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
             const btn = e.target.querySelector('button');
             const originalText = btn.innerHTML;
-            
+
             btn.style.transform = 'scale(0.95)';
             btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> SUBSCRIBED!`;
+
+            setTimeout(() => {
+                alert("Thank you! You've been added to the LCRCC Missouri email list.");
+                btn.innerHTML = originalText;
+                btn.style.transform = 'scale(1)';
+                e.target.reset();
+            }, 1500);
+        }
+
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            form.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-check text-3xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-[#002868] mb-2">Message Sent!</h3>
+                    <p class="text-gray-600">Thank you for reaching out. We'll be in touch soon.</p>
+                </div>
+            `;
+        }
+
+        function showDonateModal() {
+            document.getElementById('donate-modal').classList.remove('hidden');
+            document.getElementById('donate-modal').classList.add('flex');
+        }
+
+        function hideDonateModal() {
+            const modal = document.getElementById('donate-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function fakeDonate(amount) {
+            hideDonateModal();
+            setTimeout(() => {
+                alert(`Thank you for your $${amount} donation to LCRCC Missouri! (Demo)`);
+            }, 300);
+        }
+
+        function fakeLinkClick(page) {
+            alert(`This would navigate to the ${page} page.`);
+        }
+    </script>
+</body>
+</html>
         
