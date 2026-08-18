@@ -8,7 +8,8 @@ const GATE_COOKIE = "site_gate";
 const GATE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function isGatedPath(pathname) {
-  return pathname === "/hive.html" || pathname.startsWith("/LCRCC/");
+  // LCRCC gate temporarily disabled — re-add `|| pathname.startsWith("/LCRCC/")` to restore.
+  return pathname === "/hive.html";
 }
 
 function isHiveApiPath(pathname) {
