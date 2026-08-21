@@ -72,6 +72,13 @@ function json(data, status = 200) {
   );
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+}
+
 async function hmac(key, message) {
   const enc = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
@@ -483,6 +490,45 @@ export default {
     if (url.pathname === "/api/visits" && request.method === "GET") {
       const total = await totalVisits(env);
       return json({ total, days: 365 });
+    }
+
+    if (url.pathname === "/api/lcrcc/contact" && request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400);
+      }
+
+      const name = typeof body?.name === "string" ? body.name.trim().slice(0, 200) : "";
+      const email = typeof body?.email === "string" ? body.email.trim().slice(0, 200) : "";
+      const subject = typeof body?.subject === "string" ? body.subject.trim().slice(0, 200) : "";
+      const message = typeof body?.message === "string" ? body.message.trim().slice(0, 5000) : "";
+
+      if (!name || !EMAIL_PATTERN.test(email) || !message) {
+        return json({ error: "name, a valid email, and message are required" }, 400);
+      }
+
+      try {
+        await env.EMAIL.send({
+          to: "lcrccmo@gmail.com",
+          from: { email: "lcrcc@albertselectric.net", name: "LCRCC Missouri Website" },
+          replyTo: email,
+          subject: `LCRCC Contact Form: ${subject || "New message"}`,
+          html: `
+            <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            ${subject ? `<p><strong>Subject:</strong> ${escapeHtml(subject)}</p>` : ""}
+            <p><strong>Message:</strong></p>
+            <p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>
+          `,
+          text: `Name: ${name}\nEmail: ${email}\n${subject ? `Subject: ${subject}\n` : ""}\nMessage:\n${message}`,
+        });
+        return json({ ok: true });
+      } catch (err) {
+        console.error("LCRCC contact email failed:", err.code, err.message);
+        return json({ error: "failed to send" }, 502);
+      }
     }
 
     if (request.method === "GET" && CSP_SCOPED_PATHS.has(url.pathname)) {

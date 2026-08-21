@@ -21,6 +21,9 @@
   "triggers": {
     "crons": ["0 6 * * *"]
   },
+  "send_email": [
+    { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net"] }
+  ],
   "vars": {
     "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c"
   }
