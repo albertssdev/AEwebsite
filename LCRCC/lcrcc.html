@@ -112,7 +112,7 @@
     </nav>
 
     <!-- HERO BANNER - AMERICAN FLAG -->
-    <div class="relative flag-banner h-72 md:h-96 flex items-center justify-center overflow-hidden">
+    <div id="hero-banner" class="relative flag-banner h-72 md:h-96 flex items-center justify-center overflow-hidden">
         <img src="usflag.jpg" 
              alt="American Flag - LCRCC Missouri"
              class="absolute inset-0 w-full h-full object-cover opacity-90">
@@ -342,6 +342,8 @@
                     content.classList.remove('block');
                 }
             });
+
+            document.getElementById('hero-banner').style.display = tabIndex === 0 ? 'flex' : 'none';
         }
 
         function toggleMobileMenu() {
