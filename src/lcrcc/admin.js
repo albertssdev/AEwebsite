@@ -4,7 +4,7 @@ const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_WINDOW_SECONDS = 60 * 15;
 
 const SORT_COLUMNS = {
-  name: "contributor_name",
+  name: "last_name, first_name",
   date: "contribution_date",
   amount: "amount",
   employer: "employer_occupation",
@@ -131,8 +131,8 @@ function buildFilteredQuery(url) {
   const binds = [];
 
   if (search) {
-    where.push("contributor_name LIKE ?");
-    binds.push(`%${search}%`);
+    where.push("(first_name LIKE ? OR last_name LIKE ?)");
+    binds.push(`%${search}%`, `%${search}%`);
   }
   if (dateFrom) {
     where.push("contribution_date >= ?");
@@ -177,8 +177,8 @@ async function handleExport(request, env, url) {
   const stmt = env.LCRCC_DB.prepare(sql).bind(...binds);
   const { results } = await stmt.all();
 
-  const columns = ["contributor_name", "address", "employer_occupation", "amount", "contribution_date", "payment_method", "notes"];
-  const header = ["Name", "Address", "Employer/Occupation", "Amount", "Date", "Payment Method", "Notes"];
+  const columns = ["first_name", "last_name", "address", "employer_occupation", "amount", "contribution_date", "payment_method", "notes"];
+  const header = ["First Name", "Last Name", "Address", "Employer/Occupation", "Amount", "Date", "Payment Method", "Notes"];
   const lines = [header.join(",")];
   for (const row of results) {
     lines.push(columns.map((c) => csvEscape(row[c])).join(","));
@@ -201,7 +201,8 @@ async function handleCreate(request, env) {
     return json({ error: "invalid JSON body" }, 400);
   }
 
-  const contributor_name = typeof body?.contributor_name === "string" ? body.contributor_name.trim().slice(0, 200) : "";
+  const first_name = typeof body?.first_name === "string" ? body.first_name.trim().slice(0, 200) : "";
+  const last_name = typeof body?.last_name === "string" ? body.last_name.trim().slice(0, 200) : "";
   const address = typeof body?.address === "string" ? body.address.trim().slice(0, 300) : "";
   const employer_occupation = typeof body?.employer_occupation === "string" ? body.employer_occupation.trim().slice(0, 200) : "";
   const amount = Number(body?.amount);
@@ -209,16 +210,16 @@ async function handleCreate(request, env) {
   const payment_method = typeof body?.payment_method === "string" ? body.payment_method.trim().slice(0, 50) : "";
   const notes = typeof body?.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
 
-  if (!contributor_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
-    return json({ error: "name, address, a positive amount, and date are required" }, 400);
+  if (!first_name || !last_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
+    return json({ error: "first name, last name, address, a positive amount, and date are required" }, 400);
   }
 
   const now = new Date().toISOString();
   const result = await env.LCRCC_DB.prepare(
-    `INSERT INTO contributions (contributor_name, address, employer_occupation, amount, contribution_date, payment_method, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO contributions (first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(contributor_name, address, employer_occupation, amount, contribution_date, payment_method, notes, now, now)
+    .bind(first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, now, now)
     .run();
 
   return json({ ok: true, id: result.meta.last_row_id });
@@ -235,7 +236,8 @@ async function handleUpdate(request, env, id) {
   const existing = await env.LCRCC_DB.prepare("SELECT id FROM contributions WHERE id = ?").bind(id).first();
   if (!existing) return json({ error: "not found" }, 404);
 
-  const contributor_name = typeof body?.contributor_name === "string" ? body.contributor_name.trim().slice(0, 200) : "";
+  const first_name = typeof body?.first_name === "string" ? body.first_name.trim().slice(0, 200) : "";
+  const last_name = typeof body?.last_name === "string" ? body.last_name.trim().slice(0, 200) : "";
   const address = typeof body?.address === "string" ? body.address.trim().slice(0, 300) : "";
   const employer_occupation = typeof body?.employer_occupation === "string" ? body.employer_occupation.trim().slice(0, 200) : "";
   const amount = Number(body?.amount);
@@ -243,15 +245,15 @@ async function handleUpdate(request, env, id) {
   const payment_method = typeof body?.payment_method === "string" ? body.payment_method.trim().slice(0, 50) : "";
   const notes = typeof body?.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
 
-  if (!contributor_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
-    return json({ error: "name, address, a positive amount, and date are required" }, 400);
+  if (!first_name || !last_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
+    return json({ error: "first name, last name, address, a positive amount, and date are required" }, 400);
   }
 
   await env.LCRCC_DB.prepare(
-    `UPDATE contributions SET contributor_name = ?, address = ?, employer_occupation = ?, amount = ?, contribution_date = ?, payment_method = ?, notes = ?, updated_at = ?
+    `UPDATE contributions SET first_name = ?, last_name = ?, address = ?, employer_occupation = ?, amount = ?, contribution_date = ?, payment_method = ?, notes = ?, updated_at = ?
      WHERE id = ?`
   )
-    .bind(contributor_name, address, employer_occupation, amount, contribution_date, payment_method, notes, new Date().toISOString(), id)
+    .bind(first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, new Date().toISOString(), id)
     .run();
 
   return json({ ok: true });
