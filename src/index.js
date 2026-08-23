@@ -553,6 +553,51 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/lcrcc/subscribe" && request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "invalid JSON body" }, 400);
+      }
+
+      const name = typeof body?.name === "string" ? body.name.trim().slice(0, 200) : "";
+      const email = typeof body?.email === "string" ? body.email.trim().toLowerCase().slice(0, 200) : "";
+      const county = typeof body?.county === "string" ? body.county.trim().slice(0, 100) : "";
+
+      if (!name || !EMAIL_PATTERN.test(email)) {
+        return json({ error: "name and a valid email are required" }, 400);
+      }
+
+      const subscribedAt = new Date().toISOString();
+      await env.LCRCC_SIGNUPS_KV.put(
+        `signup:${email}`,
+        JSON.stringify({ name, email, county, subscribedAt })
+      );
+
+      try {
+        await env.EMAIL.send({
+          to: "lcrccmo@gmail.com",
+          from: { email: "contactform@lcrccmissouri.org", name: "LCRCC Missouri Website" },
+          replyTo: email,
+          subject: "LCRCC Email List: New signup",
+          html: `
+            <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            ${county ? `<p><strong>County:</strong> ${escapeHtml(county)}</p>` : ""}
+          `,
+          text: `Name: ${name}\nEmail: ${email}\n${county ? `County: ${county}\n` : ""}`,
+        });
+      } catch (err) {
+        // The signup is already saved in KV regardless - the notification
+        // email is a convenience, not the source of truth, so a failure
+        // here shouldn't fail the signup itself.
+        console.error("LCRCC signup notification email failed:", err.code, err.message);
+      }
+
+      return json({ ok: true });
+    }
+
     // lcrccmissouri.org shares this Worker but is a distinct site - its "/"
     // must not be treated as albertselectric.net's homepage for visit
     // counting or CSP purposes (LCRCC relies on Tailwind CDN, Font Awesome,
