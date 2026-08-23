@@ -51,7 +51,7 @@
 
             <!-- Filters -->
             <div class="bg-white rounded-3xl border border-gray-200 p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                     <div class="md:col-span-2">
                         <label class="block text-xs font-medium text-gray-500 mb-1">SEARCH BY NAME</label>
                         <input type="text" id="filter-search" placeholder="Contributor name..."
@@ -71,6 +71,16 @@
                             <input type="number" id="filter-amount-min" placeholder="Min" class="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
                             <input type="number" id="filter-amount-max" placeholder="Max" class="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">METHOD</label>
+                        <select id="filter-method" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                            <option value="">All Methods</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Check">Check</option>
+                            <option value="Card">Card</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                 </div>
                 <div class="flex justify-between items-center mt-4">
@@ -92,13 +102,13 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr class="text-left text-xs font-semibold text-gray-500 uppercase">
-                                <th class="px-4 py-3 sortable" data-sort="name">Name <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
-                                <th class="px-4 py-3">Address</th>
-                                <th class="px-4 py-3 sortable" data-sort="employer">Employer / Occupation <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
-                                <th class="px-4 py-3 sortable" data-sort="amount">Amount <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
-                                <th class="px-4 py-3 sortable" data-sort="date">Date <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
-                                <th class="px-4 py-3 sortable" data-sort="method">Method <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
-                                <th class="px-4 py-3">Notes</th>
+                                <th class="px-4 py-3 sortable" data-sort="name">Name <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="address">Address <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="employer">Employer / Occupation <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="amount">Amount <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="date">Date <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="method">Method <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="notes">Notes <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
                                 <th class="px-4 py-3"></th>
                             </tr>
                         </thead>
@@ -232,11 +242,13 @@
         const dateTo = qs('filter-date-to').value;
         const amountMin = qs('filter-amount-min').value;
         const amountMax = qs('filter-amount-max').value;
+        const method = qs('filter-method').value;
         if (search) params.set('search', search);
         if (dateFrom) params.set('date_from', dateFrom);
         if (dateTo) params.set('date_to', dateTo);
         if (amountMin) params.set('amount_min', amountMin);
         if (amountMax) params.set('amount_max', amountMax);
+        if (method) params.set('method', method);
         params.set('sort_by', currentSort.by);
         params.set('sort_dir', currentSort.dir);
         return params;
@@ -288,6 +300,17 @@
         return div.innerHTML;
     }
 
+    function updateSortIcons() {
+        document.querySelectorAll('.sortable').forEach((th) => {
+            const icon = th.querySelector('.sort-icon');
+            if (th.dataset.sort === currentSort.by) {
+                icon.className = `fa-solid sort-icon ml-1 text-[10px] ${currentSort.dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}`;
+            } else {
+                icon.className = 'fa-solid fa-sort sort-icon ml-1 text-[10px] opacity-40';
+            }
+        });
+    }
+
     document.querySelectorAll('.sortable').forEach((th) => {
         th.addEventListener('click', () => {
             const key = th.dataset.sort;
@@ -295,22 +318,29 @@
                 currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
             } else {
                 currentSort.by = key;
-                currentSort.dir = key === 'name' ? 'asc' : 'desc';
+                currentSort.dir = 'asc';
             }
+            updateSortIcons();
             loadContributions();
         });
     });
+    updateSortIcons();
+
+    const FILTER_FIELD_IDS = ['filter-search', 'filter-date-from', 'filter-date-to', 'filter-amount-min', 'filter-amount-max', 'filter-method'];
 
     let filterDebounce;
-    ['filter-search', 'filter-date-from', 'filter-date-to', 'filter-amount-min', 'filter-amount-max'].forEach((id) => {
-        qs(id).addEventListener('input', () => {
+    FILTER_FIELD_IDS.forEach((id) => {
+        const eventName = id === 'filter-method' ? 'change' : 'input';
+        qs(id).addEventListener(eventName, () => {
             clearTimeout(filterDebounce);
             filterDebounce = setTimeout(loadContributions, 300);
         });
     });
 
     qs('clear-filters-btn').addEventListener('click', () => {
-        ['filter-search', 'filter-date-from', 'filter-date-to', 'filter-amount-min', 'filter-amount-max'].forEach((id) => (qs(id).value = ''));
+        FILTER_FIELD_IDS.forEach((id) => (qs(id).value = ''));
+        currentSort = { by: 'date', dir: 'desc' };
+        updateSortIcons();
         loadContributions();
     });
 

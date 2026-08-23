@@ -564,7 +564,6 @@ export default {
 
       const name = typeof body?.name === "string" ? body.name.trim().slice(0, 200) : "";
       const email = typeof body?.email === "string" ? body.email.trim().toLowerCase().slice(0, 200) : "";
-      const county = typeof body?.county === "string" ? body.county.trim().slice(0, 100) : "";
 
       if (!name || !EMAIL_PATTERN.test(email)) {
         return json({ error: "name and a valid email are required" }, 400);
@@ -573,7 +572,7 @@ export default {
       const subscribedAt = new Date().toISOString();
       await env.LCRCC_SIGNUPS_KV.put(
         `signup:${email}`,
-        JSON.stringify({ name, email, county, subscribedAt })
+        JSON.stringify({ name, email, subscribedAt })
       );
 
       try {
@@ -585,9 +584,8 @@ export default {
           html: `
             <p><strong>Name:</strong> ${escapeHtml(name)}</p>
             <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-            ${county ? `<p><strong>County:</strong> ${escapeHtml(county)}</p>` : ""}
           `,
-          text: `Name: ${name}\nEmail: ${email}\n${county ? `County: ${county}\n` : ""}`,
+          text: `Name: ${name}\nEmail: ${email}\n`,
         });
       } catch (err) {
         // The signup is already saved in KV regardless - the notification

@@ -5,10 +5,12 @@ const LOCKOUT_WINDOW_SECONDS = 60 * 15;
 
 const SORT_COLUMNS = {
   name: "last_name, first_name",
+  address: "address",
   date: "contribution_date",
   amount: "amount",
   employer: "employer_occupation",
   method: "payment_method",
+  notes: "notes",
 };
 
 async function hmac(key, message) {
@@ -123,6 +125,7 @@ function buildFilteredQuery(url) {
   const dateTo = url.searchParams.get("date_to")?.trim() || "";
   const amountMin = url.searchParams.get("amount_min")?.trim() || "";
   const amountMax = url.searchParams.get("amount_max")?.trim() || "";
+  const method = url.searchParams.get("method")?.trim() || "";
   const sortByKey = url.searchParams.get("sort_by") || "date";
   const sortDir = url.searchParams.get("sort_dir") === "asc" ? "ASC" : "DESC";
   const sortColumn = SORT_COLUMNS[sortByKey] || SORT_COLUMNS.date;
@@ -149,6 +152,10 @@ function buildFilteredQuery(url) {
   if (amountMax) {
     where.push("amount <= ?");
     binds.push(Number(amountMax));
+  }
+  if (method) {
+    where.push("payment_method = ?");
+    binds.push(method);
   }
 
   const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";

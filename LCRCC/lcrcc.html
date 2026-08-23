@@ -184,18 +184,6 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">COUNTY (OPTIONAL)</label>
-                        <select id="county" class="w-full px-6 py-5 rounded-3xl border border-gray-300 focus:border-[#002868] outline-none text-lg">
-                            <option value="">Select your Missouri county...</option>
-                            <option value="St. Louis">St. Louis County</option>
-                            <option value="St. Charles">St. Charles County</option>
-                            <option value="Lincoln">Lincoln County</option>
-                            <option value="Jefferson">Jefferson County</option>
-                            <option value="Other">Other County</option>
-                        </select>
-                    </div>
-
                     <div class="flex items-center gap-x-4">
                         <input type="checkbox" id="agree" checked class="w-5 h-5 accent-[#bf0a2f]">
                         <label for="agree" class="text-sm">I agree to receive occasional emails from LCRCC Missouri. Unsubscribe anytime.</label>
@@ -370,7 +358,6 @@
             const payload = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
-                county: document.getElementById('county').value,
             };
 
             try {
