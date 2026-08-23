@@ -83,7 +83,7 @@ async function clearFailedAttempts(env, ip) {
 async function handleLogin(request, env) {
   const ip = clientIp(request);
   if (await isLockedOut(env, ip)) {
-    return json({ error: "too many attempts, try again in 15 minutes" }, 429);
+    return json({ error: "too many attempts, try again later" }, 429);
   }
 
   let body;
