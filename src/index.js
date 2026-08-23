@@ -57,6 +57,30 @@ const CONTENT_SECURITY_POLICY = [
   "upgrade-insecure-requests",
 ].join("; ");
 
+// lcrccmissouri.org's pages use inline onclick/onsubmit handlers and
+// JS-driven element.style mutations throughout (toggling menus, modals,
+// tab switching) - eliminating 'unsafe-inline' for script-src and
+// style-src would mean converting every one of those to addEventListener
+// and classList calls, a much larger refactor than "add a CSP". This still
+// gives real protection: it blocks loading any script/style/font/frame
+// from an origin not explicitly listed here, restricts embedding and
+// plugins entirely, and forces HTTPS - it just can't stop an inline-script
+// injection the way a nonce-based policy could.
+const LCRCC_CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://connect.facebook.net",
+  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+  "img-src 'self' https://www.facebook.com data:",
+  "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+  "connect-src 'self'",
+  "frame-src https://www.facebook.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 function withSecurityHeaders(response, extra = {}) {
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
@@ -639,9 +663,12 @@ export default {
       }
     }
 
-    const extra = !isLcrccDomain && CSP_SCOPED_PATHS.has(url.pathname)
-      ? { "Content-Security-Policy": CONTENT_SECURITY_POLICY }
-      : {};
+    let extra = {};
+    if (isLcrccDomain) {
+      extra = { "Content-Security-Policy": LCRCC_CONTENT_SECURITY_POLICY };
+    } else if (CSP_SCOPED_PATHS.has(url.pathname)) {
+      extra = { "Content-Security-Policy": CONTENT_SECURITY_POLICY };
+    }
     return withSecurityHeaders(assetResponse, extra);
   },
 };
