@@ -16,6 +16,14 @@ function isHiveApiPath(pathname) {
   return pathname.startsWith("/api/hive/");
 }
 
+const LCRCC_ALIAS_HOSTNAMES = new Set([
+  "www.lcrccmissouri.org",
+  "lcrccmissouri.com",
+  "www.lcrccmissouri.com",
+  "lcrccmissouri.net",
+  "www.lcrccmissouri.net",
+]);
+
 // Applied to every page/asset/API response. HSTS max-age is intentionally
 // set here rather than left to Cloudflare's dashboard-level HSTS toggle —
 // no `preload` directive, since submitting to the browser preload list is
@@ -250,6 +258,20 @@ export default {
       // password entirely for anyone submitting the login form from "www.".
       // 308 preserves the method and body.
       return Response.redirect(url.toString(), 308);
+    }
+
+    // LCRCC has its own domain now. .com/.net and the www. variants all
+    // consolidate onto the bare .org, and the old albertselectric.net/LCRCC/
+    // path permanently redirects there too so existing links keep working.
+    if (LCRCC_ALIAS_HOSTNAMES.has(url.hostname)) {
+      url.hostname = "lcrccmissouri.org";
+      return Response.redirect(url.toString(), 301);
+    }
+
+    if (url.hostname === "albertselectric.net" && url.pathname.startsWith("/LCRCC/")) {
+      const target = new URL(url.pathname.slice("/LCRCC".length) || "/", "https://lcrccmissouri.org");
+      target.search = url.search;
+      return Response.redirect(target.toString(), 301);
     }
 
     if (url.pathname === "/gate-auth" && request.method === "POST") {
@@ -512,7 +534,7 @@ export default {
       try {
         await env.EMAIL.send({
           to: "lcrccmo@gmail.com",
-          from: { email: "lcrcc@albertselectric.net", name: "LCRCC Missouri Website" },
+          from: { email: "lcrcc@lcrccmissouri.org", name: "LCRCC Missouri Website" },
           replyTo: email,
           subject: `LCRCC Contact Form: ${subject || "New message"}`,
           html: `
@@ -531,12 +553,28 @@ export default {
       }
     }
 
-    if (request.method === "GET" && CSP_SCOPED_PATHS.has(url.pathname)) {
+    // lcrccmissouri.org shares this Worker but is a distinct site - its "/"
+    // must not be treated as albertselectric.net's homepage for visit
+    // counting or CSP purposes (LCRCC relies on Tailwind CDN, Font Awesome,
+    // and the Facebook SDK, which the business-page CSP would break).
+    const isLcrccDomain = url.hostname === "lcrccmissouri.org";
+
+    if (request.method === "GET" && !isLcrccDomain && CSP_SCOPED_PATHS.has(url.pathname)) {
       await recordVisit(env, ctx);
     }
 
-    const assetResponse = await env.ASSETS.fetch(request);
-    const extra = CSP_SCOPED_PATHS.has(url.pathname)
+    // lcrccmissouri.org has no assets of its own - it's served out of the
+    // /LCRCC/ folder that also backs albertselectric.net/LCRCC/. "/" maps to
+    // lcrcc.html specifically since there's no LCRCC/index.html.
+    let assetRequest = request;
+    if (isLcrccDomain) {
+      const rewritten = new URL(request.url);
+      rewritten.pathname = url.pathname === "/" ? "/LCRCC/lcrcc.html" : `/LCRCC${url.pathname}`;
+      assetRequest = new Request(rewritten, request);
+    }
+
+    const assetResponse = await env.ASSETS.fetch(assetRequest);
+    const extra = !isLcrccDomain && CSP_SCOPED_PATHS.has(url.pathname)
       ? { "Content-Security-Policy": CONTENT_SECURITY_POLICY }
       : {};
     return withSecurityHeaders(assetResponse, extra);

@@ -11,7 +11,13 @@
   },
   "routes": [
     { "pattern": "albertselectric.net", "custom_domain": true },
-    { "pattern": "www.albertselectric.net", "custom_domain": true }
+    { "pattern": "www.albertselectric.net", "custom_domain": true },
+    { "pattern": "lcrccmissouri.org", "custom_domain": true },
+    { "pattern": "www.lcrccmissouri.org", "custom_domain": true },
+    { "pattern": "lcrccmissouri.com", "custom_domain": true },
+    { "pattern": "www.lcrccmissouri.com", "custom_domain": true },
+    { "pattern": "lcrccmissouri.net", "custom_domain": true },
+    { "pattern": "www.lcrccmissouri.net", "custom_domain": true }
   ],
   "kv_namespaces": [
     { "binding": "REVIEWS_KV", "id": "9c628783acb748d7bf0b2b3fd2bcdb96" },
@@ -22,7 +28,7 @@
     "crons": ["0 6 * * *"]
   },
   "send_email": [
-    { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net"] }
+    { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net", "lcrcc@lcrccmissouri.org"] }
   ],
   "vars": {
     "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c"
