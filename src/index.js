@@ -565,15 +565,32 @@ export default {
 
     // lcrccmissouri.org has no assets of its own - it's served out of the
     // /LCRCC/ folder that also backs albertselectric.net/LCRCC/. "/" maps to
-    // lcrcc.html specifically since there's no LCRCC/index.html.
+    // the clean (extensionless) form of lcrcc.html directly, since requesting
+    // the .html path would otherwise 307 through the assets binding's own
+    // clean-URL redirect - the Location it hands back is relative and unaware
+    // of this rewrite, which would double-prefix the follow-up request.
     let assetRequest = request;
     if (isLcrccDomain) {
       const rewritten = new URL(request.url);
-      rewritten.pathname = url.pathname === "/" ? "/LCRCC/lcrcc.html" : `/LCRCC${url.pathname}`;
+      rewritten.pathname = url.pathname === "/" ? "/LCRCC/lcrcc" : `/LCRCC${url.pathname}`;
       assetRequest = new Request(rewritten, request);
     }
 
-    const assetResponse = await env.ASSETS.fetch(assetRequest);
+    let assetResponse = await env.ASSETS.fetch(assetRequest);
+
+    // Safety net for any other assets-binding redirect (e.g. someone linking
+    // directly to a .html path): strip the /LCRCC prefix back off the
+    // Location so the follow-up request resolves against lcrccmissouri.org
+    // instead of getting double-prefixed by the rewrite above.
+    if (isLcrccDomain && assetResponse.status >= 300 && assetResponse.status < 400) {
+      const location = assetResponse.headers.get("Location");
+      if (location && location.startsWith("/LCRCC/")) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set("Location", location.slice("/LCRCC".length));
+        assetResponse = new Response(assetResponse.body, { status: assetResponse.status, headers });
+      }
+    }
+
     const extra = !isLcrccDomain && CSP_SCOPED_PATHS.has(url.pathname)
       ? { "Content-Security-Policy": CONTENT_SECURITY_POLICY }
       : {};
