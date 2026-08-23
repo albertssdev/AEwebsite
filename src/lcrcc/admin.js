@@ -5,12 +5,10 @@ const LOCKOUT_WINDOW_SECONDS = 60 * 15;
 
 const SORT_COLUMNS = {
   name: "last_name, first_name",
-  address: "address",
   date: "contribution_date",
   amount: "amount",
   employer: "employer_occupation",
   method: "payment_method",
-  notes: "notes",
 };
 
 async function hmac(key, message) {
