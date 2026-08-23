@@ -3,12 +3,15 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 4; // 4 hours - shorter than the site 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_WINDOW_SECONDS = 60 * 15;
 
+// Each entry lists the column(s) to sort by, in priority order. "name" sorts
+// by last_name then first_name - both need the SAME direction applied
+// explicitly, since `ORDER BY a, b ASC` only binds ASC to b, not a.
 const SORT_COLUMNS = {
-  name: "last_name, first_name",
-  date: "contribution_date",
-  amount: "amount",
-  employer: "employer_occupation",
-  method: "payment_method",
+  name: ["last_name", "first_name"],
+  date: ["contribution_date"],
+  amount: ["amount"],
+  employer: ["employer_occupation"],
+  method: ["payment_method"],
 };
 
 async function hmac(key, message) {
@@ -126,7 +129,7 @@ function buildFilteredQuery(url) {
   const method = url.searchParams.get("method")?.trim() || "";
   const sortByKey = url.searchParams.get("sort_by") || "date";
   const sortDir = url.searchParams.get("sort_dir") === "asc" ? "ASC" : "DESC";
-  const sortColumn = SORT_COLUMNS[sortByKey] || SORT_COLUMNS.date;
+  const sortColumns = SORT_COLUMNS[sortByKey] || SORT_COLUMNS.date;
 
   const where = [];
   const binds = [];
@@ -157,10 +160,14 @@ function buildFilteredQuery(url) {
   }
 
   const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
-  // sortColumn comes only from the SORT_COLUMNS whitelist above, never
+  // sortColumns comes only from the SORT_COLUMNS whitelist above, never
   // interpolated from raw user input - safe to inline despite not being a
-  // bound parameter (D1 doesn't support parameterizing identifiers).
-  const sql = `SELECT * FROM contributions ${whereClause} ORDER BY ${sortColumn} ${sortDir}, id DESC`;
+  // bound parameter (D1 doesn't support parameterizing identifiers). Every
+  // column gets its own explicit direction keyword - `ORDER BY a, b ASC`
+  // only binds ASC to b, not a, so a bare join would silently leave earlier
+  // columns stuck in their default direction.
+  const orderBy = sortColumns.map((col) => `${col} ${sortDir}`).join(", ");
+  const sql = `SELECT * FROM contributions ${whereClause} ORDER BY ${orderBy}, id DESC`;
   return { sql, binds };
 }
 
