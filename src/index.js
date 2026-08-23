@@ -534,7 +534,7 @@ export default {
       try {
         await env.EMAIL.send({
           to: "lcrccmo@gmail.com",
-          from: { email: "lcrcc@lcrccmissouri.org", name: "LCRCC Missouri Website" },
+          from: { email: "contactform@lcrccmissouri.org", name: "LCRCC Missouri Website" },
           replyTo: email,
           subject: `LCRCC Contact Form: ${subject || "New message"}`,
           html: `

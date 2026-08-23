@@ -28,7 +28,7 @@
     "crons": ["0 6 * * *"]
   },
   "send_email": [
-    { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net", "lcrcc@lcrccmissouri.org"] }
+    { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net", "contactform@lcrccmissouri.org"] }
   ],
   "vars": {
     "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c"
