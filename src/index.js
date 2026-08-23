@@ -68,11 +68,14 @@ const CONTENT_SECURITY_POLICY = [
 // injection the way a nonce-based policy could.
 const LCRCC_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://connect.facebook.net",
+  // static.cloudflareinsights.com is Cloudflare's own analytics beacon,
+  // auto-injected by the platform (not something in this repo's HTML) -
+  // every zone on Cloudflare gets it, so it needs an explicit allowance.
+  "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
   "img-src 'self' https://www.facebook.com data:",
   "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "frame-src https://www.facebook.com",
   "object-src 'none'",
   "base-uri 'self'",
