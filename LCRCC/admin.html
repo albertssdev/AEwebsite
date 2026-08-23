@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>LCRCC Admin — Contribution Log</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', system_ui, sans-serif; }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable:hover { color: #ffcc00; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- PIN SCREEN -->
+    <div id="pin-screen" class="min-h-screen flex items-center justify-center px-6">
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 p-10 max-w-sm w-full text-center">
+            <div class="w-14 h-14 bg-[#002868] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-lock text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-semibold text-[#002868] mb-2">LCRCC Admin</h1>
+            <p class="text-gray-500 text-sm mb-8">Enter the 4-digit PIN to view the contribution log.</p>
+            <form id="pin-form">
+                <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="pin-input"
+                       class="w-full text-center text-3xl tracking-[0.5em] px-6 py-4 rounded-2xl border border-gray-300 focus:border-[#002868] outline-none mb-4"
+                       autocomplete="off">
+                <button type="submit" class="w-full bg-[#002868] text-white font-bold py-4 rounded-2xl hover:bg-[#001a4d]">
+                    UNLOCK
+                </button>
+            </form>
+            <p id="pin-error" class="text-[#bf0a2f] text-sm mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="hidden">
+        <nav class="bg-[#002868] text-white">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <h1 class="text-xl font-semibold">LCRCC Contribution Log</h1>
+                <button id="logout-btn" class="text-sm text-white/70 hover:text-white">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> LOG OUT
+                </button>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 py-8">
+
+            <!-- Filters -->
+            <div class="bg-white rounded-3xl border border-gray-200 p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">SEARCH BY NAME</label>
+                        <input type="text" id="filter-search" placeholder="Contributor name..."
+                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">DATE FROM</label>
+                        <input type="date" id="filter-date-from" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">DATE TO</label>
+                        <input type="date" id="filter-date-to" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">AMOUNT MIN / MAX</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="filter-amount-min" placeholder="Min" class="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                            <input type="number" id="filter-amount-max" placeholder="Max" class="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <button id="clear-filters-btn" class="text-sm text-gray-500 hover:text-[#002868]">Clear filters</button>
+                    <div class="flex gap-3">
+                        <button id="download-csv-btn" class="bg-white border-2 border-[#002868] text-[#002868] font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50 text-sm">
+                            <i class="fa-solid fa-download mr-2"></i>DOWNLOAD CSV
+                        </button>
+                        <button id="add-contribution-btn" class="bg-[#bf0a2f] text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-[#9c0826] text-sm">
+                            <i class="fa-solid fa-plus mr-2"></i>ADD CONTRIBUTION
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr class="text-left text-xs font-semibold text-gray-500 uppercase">
+                                <th class="px-4 py-3 sortable" data-sort="name">Name <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3">Address</th>
+                                <th class="px-4 py-3 sortable" data-sort="employer">Employer / Occupation <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="amount">Amount <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="date">Date <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 sortable" data-sort="method">Method <i class="fa-solid fa-sort ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3">Notes</th>
+                                <th class="px-4 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+                <p id="empty-state" class="text-center text-gray-400 py-12 hidden">No contributions match these filters.</p>
+                <p id="row-count" class="text-xs text-gray-400 px-4 py-3 border-t border-gray-100"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT MODAL -->
+    <div id="entry-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-8">
+            <h2 id="modal-title" class="text-xl font-semibold text-[#002868] mb-6">Add Contribution</h2>
+            <form id="entry-form" class="space-y-4">
+                <input type="hidden" id="entry-id">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">CONTRIBUTOR NAME *</label>
+                    <input type="text" id="entry-name" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">ADDRESS *</label>
+                    <input type="text" id="entry-address" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">EMPLOYER / OCCUPATION</label>
+                    <input type="text" id="entry-employer" placeholder="Required by MEC once this donor exceeds $100 total"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">AMOUNT ($) *</label>
+                        <input type="number" step="0.01" min="0.01" id="entry-amount" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">DATE *</label>
+                        <input type="date" id="entry-date" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">PAYMENT METHOD</label>
+                    <select id="entry-method" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                        <option value="">Select...</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Check">Check</option>
+                        <option value="Card">Card</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">NOTES</label>
+                    <textarea id="entry-notes" rows="2" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm"></textarea>
+                </div>
+                <p id="entry-error" class="text-[#bf0a2f] text-sm hidden"></p>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="entry-cancel-btn" class="flex-1 border-2 border-gray-300 text-gray-600 font-semibold py-3 rounded-xl">CANCEL</button>
+                    <button type="submit" class="flex-1 bg-[#002868] text-white font-semibold py-3 rounded-xl">SAVE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    let currentSort = { by: 'date', dir: 'desc' };
+
+    function qs(id) { return document.getElementById(id); }
+
+    async function api(path, options = {}) {
+        const res = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+        if (res.status === 401) {
+            showPinScreen();
+            throw new Error('unauthorized');
+        }
+        return res;
+    }
+
+    function showPinScreen() {
+        qs('pin-screen').classList.remove('hidden');
+        qs('dashboard').classList.add('hidden');
+    }
+
+    function showDashboard() {
+        qs('pin-screen').classList.add('hidden');
+        qs('dashboard').classList.remove('hidden');
+        loadContributions();
+    }
+
+    qs('pin-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pin = qs('pin-input').value;
+        const errorEl = qs('pin-error');
+        errorEl.classList.add('hidden');
+        try {
+            const res = await fetch('/api/lcrcc/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errorEl.textContent = data.error || 'Incorrect PIN';
+                errorEl.classList.remove('hidden');
+                qs('pin-input').value = '';
+                return;
+            }
+            showDashboard();
+        } catch (err) {
+            errorEl.textContent = 'Something went wrong. Try again.';
+            errorEl.classList.remove('hidden');
+        }
+    });
+
+    qs('logout-btn').addEventListener('click', async () => {
+        await fetch('/api/lcrcc/admin/logout', { method: 'POST' });
+        qs('pin-input').value = '';
+        showPinScreen();
+    });
+
+    function buildQuery() {
+        const params = new URLSearchParams();
+        const search = qs('filter-search').value.trim();
+        const dateFrom = qs('filter-date-from').value;
+        const dateTo = qs('filter-date-to').value;
+        const amountMin = qs('filter-amount-min').value;
+        const amountMax = qs('filter-amount-max').value;
+        if (search) params.set('search', search);
+        if (dateFrom) params.set('date_from', dateFrom);
+        if (dateTo) params.set('date_to', dateTo);
+        if (amountMin) params.set('amount_min', amountMin);
+        if (amountMax) params.set('amount_max', amountMax);
+        params.set('sort_by', currentSort.by);
+        params.set('sort_dir', currentSort.dir);
+        return params;
+    }
+
+    async function loadContributions() {
+        const params = buildQuery();
+        const res = await api(`/api/lcrcc/admin/contributions?${params.toString()}`);
+        const data = await res.json();
+        renderTable(data.contributions || []);
+    }
+
+    function formatMoney(n) {
+        return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderTable(rows) {
+        const tbody = qs('table-body');
+        tbody.innerHTML = '';
+        qs('empty-state').classList.toggle('hidden', rows.length > 0);
+        qs('row-count').textContent = `${rows.length} contribution${rows.length === 1 ? '' : 's'}`;
+
+        for (const row of rows) {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-4 py-3 font-medium">${escapeHtml(row.contributor_name)}</td>
+                <td class="px-4 py-3 text-gray-600">${escapeHtml(row.address)}</td>
+                <td class="px-4 py-3 text-gray-600">${escapeHtml(row.employer_occupation || '')}</td>
+                <td class="px-4 py-3">${formatMoney(row.amount)}</td>
+                <td class="px-4 py-3 text-gray-600">${escapeHtml(row.contribution_date)}</td>
+                <td class="px-4 py-3 text-gray-600">${escapeHtml(row.payment_method || '')}</td>
+                <td class="px-4 py-3 text-gray-500 max-w-xs truncate" title="${escapeHtml(row.notes || '')}">${escapeHtml(row.notes || '')}</td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                    <button class="edit-btn text-gray-400 hover:text-[#002868] mr-3" data-id="${row.id}"><i class="fa-solid fa-pen"></i></button>
+                    <button class="delete-btn text-gray-400 hover:text-[#bf0a2f]" data-id="${row.id}"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll('.edit-btn').forEach((btn) => btn.addEventListener('click', () => openEditModal(rows.find((r) => r.id == btn.dataset.id))));
+        tbody.querySelectorAll('.delete-btn').forEach((btn) => btn.addEventListener('click', () => deleteContribution(btn.dataset.id)));
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    document.querySelectorAll('.sortable').forEach((th) => {
+        th.addEventListener('click', () => {
+            const key = th.dataset.sort;
+            if (currentSort.by === key) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.by = key;
+                currentSort.dir = key === 'name' ? 'asc' : 'desc';
+            }
+            loadContributions();
+        });
+    });
+
+    let filterDebounce;
+    ['filter-search', 'filter-date-from', 'filter-date-to', 'filter-amount-min', 'filter-amount-max'].forEach((id) => {
+        qs(id).addEventListener('input', () => {
+            clearTimeout(filterDebounce);
+            filterDebounce = setTimeout(loadContributions, 300);
+        });
+    });
+
+    qs('clear-filters-btn').addEventListener('click', () => {
+        ['filter-search', 'filter-date-from', 'filter-date-to', 'filter-amount-min', 'filter-amount-max'].forEach((id) => (qs(id).value = ''));
+        loadContributions();
+    });
+
+    qs('download-csv-btn').addEventListener('click', () => {
+        const params = buildQuery();
+        window.location.href = `/api/lcrcc/admin/contributions/export?${params.toString()}`;
+    });
+
+    function openAddModal() {
+        qs('modal-title').textContent = 'Add Contribution';
+        qs('entry-form').reset();
+        qs('entry-id').value = '';
+        qs('entry-error').classList.add('hidden');
+        qs('entry-modal').classList.remove('hidden');
+        qs('entry-modal').classList.add('flex');
+    }
+
+    function openEditModal(row) {
+        if (!row) return;
+        qs('modal-title').textContent = 'Edit Contribution';
+        qs('entry-id').value = row.id;
+        qs('entry-name').value = row.contributor_name;
+        qs('entry-address').value = row.address;
+        qs('entry-employer').value = row.employer_occupation || '';
+        qs('entry-amount').value = row.amount;
+        qs('entry-date').value = row.contribution_date;
+        qs('entry-method').value = row.payment_method || '';
+        qs('entry-notes').value = row.notes || '';
+        qs('entry-error').classList.add('hidden');
+        qs('entry-modal').classList.remove('hidden');
+        qs('entry-modal').classList.add('flex');
+    }
+
+    function closeModal() {
+        qs('entry-modal').classList.add('hidden');
+        qs('entry-modal').classList.remove('flex');
+    }
+
+    qs('add-contribution-btn').addEventListener('click', openAddModal);
+    qs('entry-cancel-btn').addEventListener('click', closeModal);
+
+    qs('entry-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = qs('entry-id').value;
+        const payload = {
+            contributor_name: qs('entry-name').value,
+            address: qs('entry-address').value,
+            employer_occupation: qs('entry-employer').value,
+            amount: qs('entry-amount').value,
+            contribution_date: qs('entry-date').value,
+            payment_method: qs('entry-method').value,
+            notes: qs('entry-notes').value,
+        };
+        const errorEl = qs('entry-error');
+        errorEl.classList.add('hidden');
+
+        try {
+            const res = await api(id ? `/api/lcrcc/admin/contributions/${id}` : '/api/lcrcc/admin/contributions', {
+                method: id ? 'PATCH' : 'POST',
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errorEl.textContent = data.error || 'Failed to save';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            closeModal();
+            loadContributions();
+        } catch (err) {
+            // unauthorized already handled by api()
+        }
+    });
+
+    async function deleteContribution(id) {
+        if (!confirm('Delete this contribution? This cannot be undone.')) return;
+        try {
+            await api(`/api/lcrcc/admin/contributions/${id}`, { method: 'DELETE' });
+            loadContributions();
+        } catch (err) {
+            // unauthorized already handled by api()
+        }
+    }
+
+    // Check for an existing session on load so a refresh doesn't force re-entering the PIN.
+    (async () => {
+        try {
+            const res = await fetch('/api/lcrcc/admin/contributions?sort_by=date&sort_dir=desc');
+            if (res.ok) {
+                showDashboard();
+            }
+        } catch (err) {}
+    })();
+</script>
+</body>
+</html>

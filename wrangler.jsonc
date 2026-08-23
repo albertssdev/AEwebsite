@@ -25,6 +25,9 @@
     { "binding": "VISITS_KV", "id": "a65027ec56264816bf65b053512c1f8d" },
     { "binding": "LCRCC_SIGNUPS_KV", "id": "85561c7bd6984fcab6edbb36a1faf378" }
   ],
+  "d1_databases": [
+    { "binding": "LCRCC_DB", "database_name": "lcrcc_contributions", "database_id": "d8a1c719-2d83-435f-a190-9cfbabef1a06" }
+  ],
   "triggers": {
     "crons": ["0 6 * * *"]
   },
