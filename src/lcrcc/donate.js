@@ -70,9 +70,10 @@ async function handleStripeWebhook(request, env) {
     let feeAmount = null;
     try {
       feeAmount = await getChargeFee(env, session.payment_intent);
-    } catch {
+    } catch (err) {
       // Non-fatal - the contribution still gets recorded; the fee can be
       // filled in later from the Stripe dashboard if this lookup fails.
+      console.error("getChargeFee failed:", session.payment_intent, err.message);
     }
 
     const now = new Date().toISOString();

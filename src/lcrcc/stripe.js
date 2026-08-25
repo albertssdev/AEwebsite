@@ -105,5 +105,8 @@ export async function verifyStripeWebhook(rawBody, signatureHeader, webhookSecre
 export async function getChargeFee(env, paymentIntentId) {
   const pi = await stripeRequest(env, "GET", `/payment_intents/${paymentIntentId}?expand[]=latest_charge.balance_transaction`, null);
   const balanceTxn = pi?.latest_charge?.balance_transaction;
+  if (!balanceTxn) {
+    console.error("getChargeFee: no balance_transaction on response", JSON.stringify({ latest_charge: pi?.latest_charge, has_pi: !!pi }));
+  }
   return balanceTxn ? balanceTxn.fee / 100 : null;
 }
