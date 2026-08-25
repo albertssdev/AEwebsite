@@ -107,8 +107,10 @@
                                 <th class="px-4 py-3">Address</th>
                                 <th class="px-4 py-3 sortable" data-sort="employer">Employer / Occupation <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
                                 <th class="px-4 py-3 sortable" data-sort="amount">Amount <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3">Fee</th>
                                 <th class="px-4 py-3 sortable" data-sort="date">Date <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
                                 <th class="px-4 py-3 sortable" data-sort="method">Method <i class="fa-solid fa-sort sort-icon ml-1 text-[10px]"></i></th>
+                                <th class="px-4 py-3 text-center" title="Foreign National Attestation on file">Attestation</th>
                                 <th class="px-4 py-3">Notes</th>
                                 <th class="px-4 py-3"></th>
                             </tr>
@@ -167,6 +169,25 @@
                         <option value="Other">Other</option>
                     </select>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">PROCESSING FEE ($)</label>
+                        <input type="number" step="0.01" min="0" id="entry-fee-amount" placeholder="If paid by card/online"
+                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">FEE PAID BY</label>
+                        <select id="entry-fee-paid-by" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm">
+                            <option value="">N/A</option>
+                            <option value="committee">Committee (expenditure)</option>
+                            <option value="donor">Donor/Processor (in-kind)</option>
+                        </select>
+                    </div>
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-600">
+                    <input type="checkbox" id="entry-attestation" class="w-4 h-4 rounded border-gray-300">
+                    Foreign National Attestation card on file
+                </label>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">NOTES</label>
                     <textarea id="entry-notes" rows="2" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#002868] outline-none text-sm"></textarea>
@@ -266,6 +287,14 @@
         return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    const FEE_PAID_BY_LABELS = { committee: 'Committee (exp.)', donor: 'Donor/Processor (in-kind)' };
+
+    function formatFee(row) {
+        if (row.fee_amount === null || row.fee_amount === undefined || row.fee_amount === '') return '';
+        const label = FEE_PAID_BY_LABELS[row.fee_paid_by] || '';
+        return `${formatMoney(row.fee_amount)}${label ? ' — ' + label : ''}`;
+    }
+
     function renderTable(rows) {
         const tbody = qs('table-body');
         tbody.innerHTML = '';
@@ -280,8 +309,10 @@
                 <td class="px-4 py-3 text-gray-600">${escapeHtml(row.address)}</td>
                 <td class="px-4 py-3 text-gray-600">${escapeHtml(row.employer_occupation || '')}</td>
                 <td class="px-4 py-3">${formatMoney(row.amount)}</td>
+                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${escapeHtml(formatFee(row))}</td>
                 <td class="px-4 py-3 text-gray-600">${escapeHtml(row.contribution_date)}</td>
                 <td class="px-4 py-3 text-gray-600">${escapeHtml(row.payment_method || '')}</td>
+                <td class="px-4 py-3 text-center">${row.attestation_signed ? '<i class="fa-solid fa-check text-green-600"></i>' : '<i class="fa-solid fa-xmark text-gray-300"></i>'}</td>
                 <td class="px-4 py-3 text-gray-500 max-w-xs truncate" title="${escapeHtml(row.notes || '')}">${escapeHtml(row.notes || '')}</td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                     <button class="edit-btn text-gray-400 hover:text-[#002868] mr-3" data-id="${row.id}"><i class="fa-solid fa-pen"></i></button>
@@ -370,6 +401,9 @@
         qs('entry-amount').value = row.amount;
         qs('entry-date').value = row.contribution_date;
         qs('entry-method').value = row.payment_method || '';
+        qs('entry-fee-amount').value = row.fee_amount ?? '';
+        qs('entry-fee-paid-by').value = row.fee_paid_by || '';
+        qs('entry-attestation').checked = !!row.attestation_signed;
         qs('entry-notes').value = row.notes || '';
         qs('entry-error').classList.add('hidden');
         qs('entry-modal').classList.remove('hidden');
@@ -395,6 +429,9 @@
             amount: qs('entry-amount').value,
             contribution_date: qs('entry-date').value,
             payment_method: qs('entry-method').value,
+            fee_amount: qs('entry-fee-amount').value,
+            fee_paid_by: qs('entry-fee-paid-by').value,
+            attestation_signed: qs('entry-attestation').checked,
             notes: qs('entry-notes').value,
         };
         const errorEl = qs('entry-error');

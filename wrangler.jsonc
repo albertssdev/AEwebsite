@@ -35,6 +35,7 @@
     { "name": "EMAIL", "allowed_sender_addresses": ["lcrcc@albertselectric.net", "contactform@lcrccmissouri.org"] }
   ],
   "vars": {
-    "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c"
+    "GOOGLE_PLACE_ID": "ChIJVeZ2_mwTzooRBugM6zEur9c",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_51U8NTMBcmeycP0LLcPkNtUOlYhv5SPBIjKz2v1QUZghntS1DhfXKY6IV58vBd8JVk3VeJC9uddZKaJBFvJUSwbmP00HwfTYc7d"
   }
 }

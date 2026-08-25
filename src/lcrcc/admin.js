@@ -189,11 +189,20 @@ async function handleExport(request, env, url) {
   const stmt = env.LCRCC_DB.prepare(sql).bind(...binds);
   const { results } = await stmt.all();
 
-  const columns = ["first_name", "last_name", "address", "employer_occupation", "amount", "contribution_date", "payment_method", "notes"];
-  const header = ["First Name", "Last Name", "Address", "Employer/Occupation", "Amount", "Date", "Payment Method", "Notes"];
+  const columns = ["first_name", "last_name", "address", "employer_occupation", "amount", "fee_amount", "fee_paid_by", "contribution_date", "payment_method", "attestation_signed", "notes"];
+  const header = ["First Name", "Last Name", "Address", "Employer/Occupation", "Amount", "Fee Amount", "Fee Paid By", "Date", "Payment Method", "Attestation Signed", "Notes"];
+  const FEE_PAID_BY_LABELS = { committee: "Committee (expenditure)", donor: "Donor/Processor (in-kind)" };
   const lines = [header.join(",")];
   for (const row of results) {
-    lines.push(columns.map((c) => csvEscape(row[c])).join(","));
+    lines.push(
+      columns
+        .map((c) => {
+          if (c === "attestation_signed") return csvEscape(row[c] ? "Yes" : "No");
+          if (c === "fee_paid_by") return csvEscape(FEE_PAID_BY_LABELS[row[c]] || "");
+          return csvEscape(row[c]);
+        })
+        .join(",")
+    );
   }
   const csv = lines.join("\r\n");
 
@@ -221,17 +230,23 @@ async function handleCreate(request, env) {
   const contribution_date = typeof body?.contribution_date === "string" ? body.contribution_date.trim().slice(0, 10) : "";
   const payment_method = typeof body?.payment_method === "string" ? body.payment_method.trim().slice(0, 50) : "";
   const notes = typeof body?.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
+  const fee_amount = body?.fee_amount === "" || body?.fee_amount === undefined || body?.fee_amount === null ? null : Number(body.fee_amount);
+  const fee_paid_by = typeof body?.fee_paid_by === "string" && ["committee", "donor"].includes(body.fee_paid_by) ? body.fee_paid_by : null;
+  const attestation_signed = body?.attestation_signed ? 1 : 0;
 
   if (!first_name || !last_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
     return json({ error: "first name, last name, address, a positive amount, and date are required" }, 400);
   }
+  if (fee_amount !== null && (!Number.isFinite(fee_amount) || fee_amount < 0)) {
+    return json({ error: "fee amount must be a non-negative number" }, 400);
+  }
 
   const now = new Date().toISOString();
   const result = await env.LCRCC_DB.prepare(
-    `INSERT INTO contributions (first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO contributions (first_name, last_name, address, employer_occupation, amount, fee_amount, fee_paid_by, contribution_date, payment_method, attestation_signed, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, now, now)
+    .bind(first_name, last_name, address, employer_occupation, amount, fee_amount, fee_paid_by, contribution_date, payment_method, attestation_signed, notes, now, now)
     .run();
 
   return json({ ok: true, id: result.meta.last_row_id });
@@ -256,16 +271,22 @@ async function handleUpdate(request, env, id) {
   const contribution_date = typeof body?.contribution_date === "string" ? body.contribution_date.trim().slice(0, 10) : "";
   const payment_method = typeof body?.payment_method === "string" ? body.payment_method.trim().slice(0, 50) : "";
   const notes = typeof body?.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
+  const fee_amount = body?.fee_amount === "" || body?.fee_amount === undefined || body?.fee_amount === null ? null : Number(body.fee_amount);
+  const fee_paid_by = typeof body?.fee_paid_by === "string" && ["committee", "donor"].includes(body.fee_paid_by) ? body.fee_paid_by : null;
+  const attestation_signed = body?.attestation_signed ? 1 : 0;
 
   if (!first_name || !last_name || !address || !Number.isFinite(amount) || amount <= 0 || !contribution_date) {
     return json({ error: "first name, last name, address, a positive amount, and date are required" }, 400);
   }
+  if (fee_amount !== null && (!Number.isFinite(fee_amount) || fee_amount < 0)) {
+    return json({ error: "fee amount must be a non-negative number" }, 400);
+  }
 
   await env.LCRCC_DB.prepare(
-    `UPDATE contributions SET first_name = ?, last_name = ?, address = ?, employer_occupation = ?, amount = ?, contribution_date = ?, payment_method = ?, notes = ?, updated_at = ?
+    `UPDATE contributions SET first_name = ?, last_name = ?, address = ?, employer_occupation = ?, amount = ?, fee_amount = ?, fee_paid_by = ?, contribution_date = ?, payment_method = ?, attestation_signed = ?, notes = ?, updated_at = ?
      WHERE id = ?`
   )
-    .bind(first_name, last_name, address, employer_occupation, amount, contribution_date, payment_method, notes, new Date().toISOString(), id)
+    .bind(first_name, last_name, address, employer_occupation, amount, fee_amount, fee_paid_by, contribution_date, payment_method, attestation_signed, notes, new Date().toISOString(), id)
     .run();
 
   return json({ ok: true });
