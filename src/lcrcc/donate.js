@@ -47,7 +47,38 @@ async function handleCreateCheckoutSession(request, env, url) {
   }
 }
 
-async function handleStripeWebhook(request, env) {
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Stripe attaches the balance_transaction (where the processing fee lives) to
+// a charge asynchronously - it's routinely still null at the exact moment
+// checkout.session.completed fires, confirmed via production logs. Rather
+// than block the webhook response on it (Stripe wants a fast 2xx), the row
+// is inserted with fee_amount null immediately and this runs afterward via
+// ctx.waitUntil, retrying with backoff until the fee shows up.
+const FEE_RETRY_DELAYS_MS = [2000, 3000, 5000, 8000, 8000];
+
+async function retryFeeLookup(env, contributionId, paymentIntentId) {
+  for (const ms of FEE_RETRY_DELAYS_MS) {
+    await delay(ms);
+    let feeAmount = null;
+    try {
+      feeAmount = await getChargeFee(env, paymentIntentId);
+    } catch (err) {
+      console.error("retryFeeLookup: getChargeFee failed:", paymentIntentId, err.message);
+    }
+    if (feeAmount !== null) {
+      await env.LCRCC_DB.prepare(`UPDATE contributions SET fee_amount = ?, fee_paid_by = ?, updated_at = ? WHERE id = ?`)
+        .bind(feeAmount, "committee", new Date().toISOString(), contributionId)
+        .run();
+      return;
+    }
+  }
+  console.error("retryFeeLookup: gave up, fee never appeared for payment_intent:", paymentIntentId);
+}
+
+async function handleStripeWebhook(request, env, ctx) {
   const rawBody = await request.text();
   const signature = request.headers.get("Stripe-Signature");
 
@@ -66,18 +97,9 @@ async function handleStripeWebhook(request, env) {
     const session = event.data.object;
     const meta = session.metadata || {};
     const amount = (session.amount_total || 0) / 100;
-
-    let feeAmount = null;
-    try {
-      feeAmount = await getChargeFee(env, session.payment_intent);
-    } catch (err) {
-      // Non-fatal - the contribution still gets recorded; the fee can be
-      // filled in later from the Stripe dashboard if this lookup fails.
-      console.error("getChargeFee failed:", session.payment_intent, err.message);
-    }
-
     const now = new Date().toISOString();
-    await env.LCRCC_DB.prepare(
+
+    const result = await env.LCRCC_DB.prepare(
       `INSERT INTO contributions (first_name, last_name, address, employer_occupation, amount, fee_amount, fee_paid_by, contribution_date, payment_method, attestation_signed, notes, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
@@ -87,8 +109,8 @@ async function handleStripeWebhook(request, env) {
         meta.address || "",
         meta.employer_occupation || "",
         amount,
-        feeAmount,
-        feeAmount !== null ? "committee" : null,
+        null,
+        null,
         now.slice(0, 10),
         "Card",
         meta.attestation_signed === "true" ? 1 : 0,
@@ -97,17 +119,21 @@ async function handleStripeWebhook(request, env) {
         now
       )
       .run();
+
+    if (session.payment_intent) {
+      ctx.waitUntil(retryFeeLookup(env, result.meta.last_row_id, session.payment_intent));
+    }
   }
 
   return json({ received: true });
 }
 
-export async function handleDonateApi(request, env, url) {
+export async function handleDonateApi(request, env, url, ctx) {
   if (url.pathname === "/api/lcrcc/donate/create-checkout-session" && request.method === "POST") {
     return handleCreateCheckoutSession(request, env, url);
   }
   if (url.pathname === "/api/lcrcc/stripe-webhook" && request.method === "POST") {
-    return handleStripeWebhook(request, env);
+    return handleStripeWebhook(request, env, ctx);
   }
   return json({ error: "not found" }, 404);
 }

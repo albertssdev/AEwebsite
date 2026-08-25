@@ -630,7 +630,7 @@ export default {
     }
 
     if (isLcrccDonateApiPath(url.pathname)) {
-      return handleDonateApi(request, env, url);
+      return handleDonateApi(request, env, url, ctx);
     }
 
     // lcrccmissouri.org shares this Worker but is a distinct site - its "/"
