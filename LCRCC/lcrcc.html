@@ -65,6 +65,14 @@
     </style>
 </head>
 <body class="tail-container">
+    <!-- Donation return banner (non-blocking, unlike alert()) -->
+    <div id="donation-banner" class="hidden px-6 py-4 text-center font-semibold">
+        <span id="donation-banner-text"></span>
+        <button onclick="document.getElementById('donation-banner').classList.add('hidden')" class="ml-4 opacity-70 hover:opacity-100">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
     <!-- Top Navigation Bar -->
     <nav class="bg-[#002868] text-white sticky top-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -367,13 +375,21 @@
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v18.0"></script>
 
     <script>
+        function showBanner(text, kind) {
+            const banner = document.getElementById('donation-banner');
+            document.getElementById('donation-banner-text').textContent = text;
+            banner.className = `px-6 py-4 text-center font-semibold ${
+                kind === 'success' ? 'bg-green-600 text-white' : 'bg-gray-700 text-white'
+            }`;
+        }
+
         (function handleDonationReturn() {
             const params = new URLSearchParams(window.location.search);
             const donation = params.get('donation');
             if (donation === 'success') {
-                alert('Thank you for your donation to LCRCC Missouri! Your contribution has been received.');
+                showBanner('Thank you for your donation to LCRCC Missouri! Your contribution has been received.', 'success');
             } else if (donation === 'cancelled') {
-                alert('Your donation was cancelled - no charge was made. Feel free to try again anytime.');
+                showBanner('Your donation was cancelled - no charge was made. Feel free to try again anytime.', 'cancelled');
             }
             if (donation) {
                 params.delete('donation');
