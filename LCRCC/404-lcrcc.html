@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, follow">
+    <title>Page Not Found | LCRCC Missouri</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Inter:wght@400;500;600&display=swap');
+        * { font-family: 'Inter', system_ui, sans-serif; }
+        .heading-font { font-family: 'Libre Baskerville', serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-[#002868] text-white">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center">
+            <a href="/" class="flex items-center gap-x-3 hover:opacity-90">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
+                    <img src="lcrcclogo-tight.jpg" alt="LCRCC logo" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h1 class="heading-font text-xl tracking-tighter leading-none">LCRCC</h1>
+                    <p class="text-[10px] font-medium tracking-[2px] text-[#ffcc00]">MISSOURI</p>
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-6 py-24 text-center">
+        <h2 class="heading-font text-4xl text-[#002868] mb-4">Page Not Found</h2>
+        <p class="text-gray-600 mb-10">The page you're looking for doesn't exist or may have moved.</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/" class="bg-[#002868] text-white font-bold px-8 py-4 rounded-3xl hover:bg-[#001a4d]">
+                <i class="fa-solid fa-house mr-2"></i>BACK TO HOMEPAGE
+            </a>
+            <a href="mailto:lcrccmo@gmail.com" class="border-2 border-[#002868] text-[#002868] font-bold px-8 py-4 rounded-3xl hover:bg-gray-100">
+                <i class="fa-solid fa-envelope mr-2"></i>EMAIL US
+            </a>
+        </div>
+    </main>
+
+    <footer class="bg-[#002868] text-white py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center text-sm text-white/70">
+            &copy; <span id="year"></span> Linn County Republican Central Committee. All rights reserved.
+        </div>
+    </footer>
+
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

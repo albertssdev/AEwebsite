@@ -658,6 +658,14 @@ export default {
 
     let assetResponse = await env.ASSETS.fetch(assetRequest);
 
+    // The default 404 page is Alberts Electric's - swap in the LCRCC one
+    // (no phone CTA, LCRCC branding/links) for lcrccmissouri.org visitors.
+    if (isLcrccDomain && assetResponse.status === 404) {
+      const notFoundRequest = new Request(new URL("/LCRCC/404-lcrcc.html", request.url), request);
+      const lcrccNotFound = await env.ASSETS.fetch(notFoundRequest);
+      assetResponse = new Response(lcrccNotFound.body, { status: 404, headers: lcrccNotFound.headers });
+    }
+
     // Safety net for any other assets-binding redirect (e.g. someone linking
     // directly to a .html path): strip the /LCRCC prefix back off the
     // Location so the follow-up request resolves against lcrccmissouri.org

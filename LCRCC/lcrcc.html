@@ -367,6 +367,21 @@
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v18.0"></script>
 
     <script>
+        (function handleDonationReturn() {
+            const params = new URLSearchParams(window.location.search);
+            const donation = params.get('donation');
+            if (donation === 'success') {
+                alert('Thank you for your donation to LCRCC Missouri! Your contribution has been received.');
+            } else if (donation === 'cancelled') {
+                alert('Your donation was cancelled - no charge was made. Feel free to try again anytime.');
+            }
+            if (donation) {
+                params.delete('donation');
+                const cleanUrl = window.location.pathname + (params.toString() ? `?${params}` : '');
+                window.history.replaceState({}, '', cleanUrl);
+            }
+        })();
+
         let currentTab = 0;
         const tabs = document.querySelectorAll('.tab-button');
         const contents = document.querySelectorAll('.tab-content');

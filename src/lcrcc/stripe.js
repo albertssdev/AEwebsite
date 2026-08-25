@@ -47,8 +47,11 @@ export async function createCheckoutSession(env, origin, donor) {
   return stripeRequest(env, "POST", "/checkout/sessions", {
     mode: "payment",
     customer_email: email,
-    success_url: `${origin}/LCRCC/lcrcc.html?donation=success`,
-    cancel_url: `${origin}/LCRCC/lcrcc.html?donation=cancelled`,
+    // lcrccmissouri.org serves the LCRCC page at "/" itself - "/LCRCC/lcrcc.html"
+    // is not a real path on this domain (that's the asset's path inside the
+    // repo, rewritten internally) and 404s if used directly.
+    success_url: `${origin}/?donation=success`,
+    cancel_url: `${origin}/?donation=cancelled`,
     line_items: [
       {
         price_data: {
