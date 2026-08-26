@@ -297,6 +297,27 @@ async function handleDelete(env, id) {
   return json({ ok: true });
 }
 
+async function handleEmailList(env) {
+  const signups = [];
+  let cursor;
+  do {
+    const page = await env.LCRCC_SIGNUPS_KV.list({ prefix: "signup:", cursor });
+    for (const key of page.keys) {
+      const raw = await env.LCRCC_SIGNUPS_KV.get(key.name);
+      if (!raw) continue;
+      try {
+        signups.push(JSON.parse(raw));
+      } catch {
+        // Skip any malformed entry rather than fail the whole export.
+      }
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  signups.sort((a, b) => (a.subscribedAt < b.subscribedAt ? 1 : -1));
+  return json({ signups, count: signups.length });
+}
+
 export async function handleAdminApi(request, env, url) {
   const path = url.pathname;
 
@@ -312,6 +333,9 @@ export async function handleAdminApi(request, env, url) {
     return json({ error: "unauthorized" }, 401);
   }
 
+  if (path === "/api/lcrcc/admin/email-list" && request.method === "GET") {
+    return handleEmailList(env);
+  }
   if (path === "/api/lcrcc/admin/contributions" && request.method === "GET") {
     return handleList(request, env, url);
   }

@@ -47,9 +47,14 @@
                     </div>
                     <h1 class="text-xl font-semibold">LCRCC Contribution Log</h1>
                 </a>
-                <button id="logout-btn" class="text-sm text-white/70 hover:text-white">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> LOG OUT
-                </button>
+                <div class="flex items-center gap-x-5">
+                    <button id="copy-email-list-btn" class="text-sm text-white/70 hover:text-white">
+                        <i class="fa-solid fa-envelope mr-1"></i> COPY EMAIL LIST
+                    </button>
+                    <button id="logout-btn" class="text-sm text-white/70 hover:text-white">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> LOG OUT
+                    </button>
+                </div>
             </div>
         </nav>
 
@@ -253,6 +258,22 @@
         } catch (err) {
             errorEl.textContent = 'Something went wrong. Try again.';
             errorEl.classList.remove('hidden');
+        }
+    });
+
+    qs('copy-email-list-btn').addEventListener('click', async () => {
+        const btn = qs('copy-email-list-btn');
+        const originalHtml = btn.innerHTML;
+        try {
+            const res = await api('/api/lcrcc/admin/email-list');
+            const data = await res.json();
+            const emails = (data.signups || []).map((s) => s.email).join(', ');
+            await navigator.clipboard.writeText(emails);
+            btn.innerHTML = `<i class="fa-solid fa-check mr-1"></i> COPIED (${data.count})`;
+        } catch (err) {
+            btn.innerHTML = `<i class="fa-solid fa-xmark mr-1"></i> COPY FAILED`;
+        } finally {
+            setTimeout(() => { btn.innerHTML = originalHtml; }, 2500);
         }
     });
 
