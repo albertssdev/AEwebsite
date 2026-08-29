@@ -5,6 +5,7 @@ import { PROVIDERS, PROVIDER_NAMES } from "./hive/adapters.js";
 import { describeError } from "./hive/base.js";
 import { handleAdminApi, isLcrccAdminApiPath } from "./lcrcc/admin.js";
 import { handleDonateApi, isLcrccDonateApiPath } from "./lcrcc/donate.js";
+import { addContactToLists } from "./lcrcc/brevo.js";
 
 const GATE_COOKIE = "site_gate";
 const GATE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -592,15 +593,34 @@ export default {
 
       const name = typeof body?.name === "string" ? body.name.trim().slice(0, 200) : "";
       const email = typeof body?.email === "string" ? body.email.trim().toLowerCase().slice(0, 200) : "";
+      const wantsAnnouncements = body?.announcements === true;
+      const wantsNewsletter = body?.newsletter === true;
 
       if (!name || !EMAIL_PATTERN.test(email)) {
         return json({ error: "name and a valid email are required" }, 400);
+      }
+      if (!wantsAnnouncements && !wantsNewsletter) {
+        return json({ error: "select at least one list to subscribe to" }, 400);
+      }
+
+      const listIds = [];
+      if (wantsAnnouncements) listIds.push(Number(env.BREVO_LIST_ID_ANNOUNCEMENTS));
+      if (wantsNewsletter) listIds.push(Number(env.BREVO_LIST_ID_NEWSLETTER));
+
+      try {
+        await addContactToLists(env, { email, name, listIds });
+      } catch (err) {
+        // Unlike the notification email below, this IS the actual
+        // subscription - fail loudly so the visitor knows to retry rather
+        // than believing they're on a list they were never added to.
+        console.error("Brevo addContactToLists failed:", err.message);
+        return json({ error: "could not complete signup - please try again shortly" }, 502);
       }
 
       const subscribedAt = new Date().toISOString();
       await env.LCRCC_SIGNUPS_KV.put(
         `signup:${email}`,
-        JSON.stringify({ name, email, subscribedAt })
+        JSON.stringify({ name, email, subscribedAt, listIds })
       );
 
       try {

@@ -206,10 +206,17 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-x-4">
-                        <input type="checkbox" id="agree" checked class="w-5 h-5 accent-[#bf0a2f]">
-                        <label for="agree" class="text-sm">I agree to receive occasional emails from LCRCC Missouri. Unsubscribe anytime.</label>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-x-4">
+                            <input type="checkbox" id="list-announcements" checked class="w-5 h-5 mt-0.5 accent-[#bf0a2f]">
+                            <label for="list-announcements" class="text-sm"><span class="font-semibold">Announcements</span> - meetings, candidate endorsements, events, and other committee news.</label>
+                        </div>
+                        <div class="flex items-start gap-x-4">
+                            <input type="checkbox" id="list-newsletter" checked class="w-5 h-5 mt-0.5 accent-[#bf0a2f]">
+                            <label for="list-newsletter" class="text-sm"><span class="font-semibold">Newsletter</span> - our periodic longer-form newsletter. Can be unsubscribed from separately.</label>
+                        </div>
                     </div>
+                    <p id="email-form-error" class="text-[#bf0a2f] text-sm hidden">Please select at least one list to subscribe to.</p>
 
                     <button type="submit" class="w-full bg-[#bf0a2f] hover:bg-[#9c0826] text-white font-bold text-xl py-6 rounded-3xl flex items-center justify-center gap-x-3">
                         <span>SUBSCRIBE TO EMAIL LIST</span>
@@ -436,6 +443,16 @@
         async function handleEmailSignup(e) {
             e.preventDefault();
             const form = e.target;
+            const errorEl = document.getElementById('email-form-error');
+            errorEl.classList.add('hidden');
+
+            const announcements = document.getElementById('list-announcements').checked;
+            const newsletter = document.getElementById('list-newsletter').checked;
+            if (!announcements && !newsletter) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
             const btn = form.querySelector('button');
             const originalText = btn.innerHTML;
             btn.disabled = true;
@@ -445,6 +462,8 @@
             const payload = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
+                announcements,
+                newsletter,
             };
 
             try {
