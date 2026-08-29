@@ -6,7 +6,6 @@ import { describeError } from "./hive/base.js";
 import { handleAdminApi, isLcrccAdminApiPath } from "./lcrcc/admin.js";
 import { handleDonateApi, isLcrccDonateApiPath } from "./lcrcc/donate.js";
 import { addContactToLists } from "./lcrcc/brevo.js";
-import { handleTempBulkImport, isTempBulkImportPath } from "./lcrcc/temp-bulk-import.js";
 
 const GATE_COOKIE = "site_gate";
 const GATE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -652,10 +651,6 @@ export default {
 
     if (isLcrccDonateApiPath(url.pathname)) {
       return handleDonateApi(request, env, url, ctx);
-    }
-
-    if (isTempBulkImportPath(url.pathname)) {
-      return handleTempBulkImport(request, env);
     }
 
     // lcrccmissouri.org shares this Worker but is a distinct site - its "/"
