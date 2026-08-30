@@ -32,6 +32,9 @@ Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsit
   `hive.html` is password-gated. `sermon/` is public, served at `/sermon`
   (`/sermon-search/*` and `/sermons/*` 301-redirect to it). All are
   `noindex,nofollow` so none of it affects the business site's SEO.
+- `sermon/sermons.json` — the sermon search data. Regenerate it from the
+  sermon-processor export with `python scripts/build_sermons_json.py <path-to>/sermon_database.csv`
+  (see that script's header). `scripts/` is `.assetsignore`d, not served.
 - `assets/js/reviews.js` — fetches `/api/reviews` (a Worker route backed by
   Google's Places API, cached in KV) and renders the homepage reviews section
 
