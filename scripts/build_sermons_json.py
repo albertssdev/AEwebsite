@@ -167,6 +167,14 @@ def main():
             "url": url,
             "media": media_kind(url),
         }
+
+        # Rows the manual review marked "reject" (bad transcription/enrichment)
+        # ship as bare stubs — findable by title/speaker, no unreliable summary.
+        if (r.get("manual_verification") or "").strip().lower() == "reject":
+            item["_raw"] = r
+            by_id[sid] = item
+            continue
+
         dur = duration_seconds(r.get("duration", ""))
         if dur:
             item["dur"] = dur
@@ -208,13 +216,15 @@ def main():
     OUT_PATH.write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     enriched = sum(1 for i in items if "summary" in i)
+    rejected = sum(1 for r in rows if (r.get("manual_verification") or "").strip().lower() == "reject")
     audio = sum(1 for i in items if i["media"] == "audio")
     video = sum(1 for i in items if i["media"] == "video")
     other = sum(1 for i in items if i["media"] == "other")
     size_kb = OUT_PATH.stat().st_size / 1024
     print(f"source : {src}")
     print(f"output : {OUT_PATH}  ({size_kb:,.0f} KB)")
-    print(f"sermons: {len(items)}   enriched (has summary): {enriched}   stubs: {len(items) - enriched}")
+    print(f"sermons: {len(items)}   enriched (has summary): {enriched}   stubs: {len(items) - enriched}  "
+          f"(incl. {rejected} manual_verification=reject shipped as stubs)")
     print(f"media  : {audio} audio, {video} video, {other} other")
     if other:
         print("  note: 'other' media rows have a URL that's neither an .mp3 nor YouTube — check them.")
