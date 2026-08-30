@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Sermon Search</title>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Sermon Search</h1>
+        <p class="text-gray-600 mt-1">Search sermons by title or speaker.</p>
+      </div>
+      <a href="sermon-index.html"
+         class="mt-1 shrink-0 text-blue-700 hover:underline font-medium whitespace-nowrap">
+        Sermon Index &rarr;
+      </a>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+      <input id="searchInput" type="text" autocomplete="off"
+             class="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+             placeholder="Enter a search term..." />
+      <select id="sortSelect"
+              class="border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="id-desc">Newest first</option>
+        <option value="id-asc">Oldest first</option>
+        <option value="title-asc">Title (A&ndash;Z)</option>
+        <option value="speaker-asc">Speaker (A&ndash;Z)</option>
+      </select>
+    </div>
+
+    <p id="count" class="text-sm text-gray-500 mb-2"></p>
+    <p id="status" class="hidden text-red-700 py-8 text-center"></p>
+    <div id="results"></div>
+
+  </div>
+</body>
+</html>

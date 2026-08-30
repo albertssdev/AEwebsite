@@ -26,10 +26,12 @@ Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsit
 - `assets/` — CSS, JS, images
 - `src/index.js` — Worker: handles the `www` redirect and the password gate
 - `gate.html` — password page for gated links
-- `LCRCC/`, `sermon-search/`, `hive.html` — unrelated pages hosted on the same
-  domain as a convenience. `LCRCC` and `hive.html` are password-gated and
-  `noindex,nofollow`; `sermon-search/` is public but also `noindex,nofollow`
-  so none of it affects the business site's SEO.
+- `LCRCC/`, `sermons/`, `hive.html` — unrelated pages sharing this Worker.
+  `LCRCC/` backs the separate **lcrccmissouri.org** site (hostname-routed in
+  `src/index.js`); `albertselectric.net/LCRCC/*` 301-redirects there.
+  `hive.html` is password-gated. `sermons/` is public, served at `/sermons`
+  (`/sermon-search/*` 301-redirects to it). All are `noindex,nofollow` so none
+  of it affects the business site's SEO.
 - `assets/js/reviews.js` — fetches `/api/reviews` (a Worker route backed by
   Google's Places API, cached in KV) and renders the homepage reviews section
 
@@ -59,7 +61,7 @@ Create a `.dev.vars` file in this directory (never commit it — it's in
 `.gitignore`) with:
 
 ```
-GATE_PASSWORD=<password for the LCRCC/Hive gate>
+GATE_PASSWORD=<password for the Hive gate>
 GATE_SIGNING_KEY=<random 32+ byte hex string>
 GOOGLE_PLACES_API_KEY=<see "Google reviews setup" below>
 ```

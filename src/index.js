@@ -204,10 +204,11 @@ function dedupeConsecutiveFirstNames(reviews) {
 }
 
 // Reused for both visit tracking and CSP scoping — these are the four public
-// business pages. The gate, hive, LCRCC, and sermon-search pages elsewhere on
-// this domain rely on inline scripts and third-party CDNs (Tailwind, fuse.js,
-// Facebook SDK) a strict CSP would break, and are already password-gated /
-// noindex, so a site-wide policy isn't worth the trade-off.
+// business pages. The gate, hive, and /sermons/ pages elsewhere on this domain
+// rely on inline scripts and third-party CDNs (Tailwind, fuse.js) a strict CSP
+// would break; hive is password-gated and the sermon pages are noindex, so a
+// site-wide policy isn't worth the trade-off. lcrccmissouri.org's pages get
+// their own policy (LCRCC_CONTENT_SECURITY_POLICY) applied further down.
 const CSP_SCOPED_PATHS = new Set([
   "/", "/index.html",
   "/about", "/about.html",
@@ -510,6 +511,12 @@ export default {
       // of letting them 404.
       const aboutUrl = new URL("/about.html#service-area", url);
       return Response.redirect(aboutUrl.toString(), 301);
+    }
+
+    if (url.pathname === "/sermon-search" || url.pathname.startsWith("/sermon-search/")) {
+      // Sermon pages moved from /sermon-search/ to /sermons/ — redirect old
+      // bookmarks (the footer links that used to point here are gone).
+      return Response.redirect(new URL("/sermons/", url).toString(), 301);
     }
 
     if (url.pathname === "/api/reviews" && request.method === "GET") {
