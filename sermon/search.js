@@ -65,24 +65,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     els.speaker.insertAdjacentHTML("beforeend", `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`);
   }
 
-  // bare numbers are scripture chapters — only meaningful in the reference list
-  // or a title like "Acts 2 Verse By Verse", not in prose. Restrict them there
-  // so "romans 8" doesn't drag in every sermon with an "8" in its summary.
-  const NUM_FIELDS = [["title", 10], ["scripture", 7]];
-
   function scoreOf(s, words, phrase) {
     let score = 0;
-    for (const w of words) {
-      const isNum = /^\d+$/.test(w);
-      const fields = isNum ? NUM_FIELDS : FIELDS;
-      const test = isNum
-        ? (str) => new RegExp("\\b" + w + "\\b").test(str) // "8" = chapter, not "28"
-        : (str) => str.includes(w);
+    const wordToks = words.filter((w) => !/^\d+$/.test(w));
+    const numToks = words.filter((w) => /^\d+$/.test(w));
+
+    // Text words: substring match in any weighted field.
+    const hitRefField = { title: false, scripture: false };
+    for (const w of wordToks) {
       let best = 0;
-      for (const [k, wt] of fields) if (test(s._f[k])) best = Math.max(best, wt);
-      if (best === 0) return -1; // every word must match somewhere
+      for (const [k, wt] of FIELDS) {
+        if (s._f[k].includes(w)) {
+          best = Math.max(best, wt);
+          if (k === "title" || k === "scripture") hitRefField[k] = true;
+        }
+      }
+      if (best === 0) return -1;
       score += best;
     }
+
+    // Bare numbers are scripture chapters. Only count them where a word token
+    // also landed (title or reference list) — keeps "1 john 3" from matching
+    // every sermon that happens to contain a stray "1" and "3".
+    for (const w of numToks) {
+      const rx = new RegExp("\\b" + w + "\\b");
+      let ok = false;
+      for (const [k, wt] of [["title", 8], ["scripture", 6]]) {
+        if ((wordToks.length === 0 || hitRefField[k]) && rx.test(s._f[k])) { score += wt; ok = true; break; }
+      }
+      if (!ok) return -1;
+    }
+
     if (words.length > 1) {
       const rx = new RegExp("\\b" + phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b");
       if (rx.test(s._f.title)) score += 25;

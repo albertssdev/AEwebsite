@@ -30,6 +30,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_PATH = REPO_ROOT / "sermon" / "sermons.json"
 
 CANDIDATES = [
+    # Google Drive sync of the sermon-processor working folder — the live output.
+    Path("G:/My Drive/Work and pictures/sermon-processor/sermon_database.csv"),
     Path.home() / "sermon-processor" / "sermon_database.csv",           # the Ryzen working folder
     Path.home() / "Downloads" / "Telegram Desktop" / "sermon_database.csv",
     REPO_ROOT / "scripts" / "sermon_database.csv",
@@ -82,6 +84,24 @@ def split_list(s: str):
             seen.add(key)
             out.append(p)
     return out
+
+
+def parse_date(*values) -> str:
+    """Normalise a sermon date to YYYY-MM-DD.
+
+    The processor writes dates as YYMMDD ('141019', '260705'); older exports
+    used ISO already. Returns '' if nothing parses.
+    """
+    for v in values:
+        v = (v or "").strip()
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            return v
+        m = re.fullmatch(r"(\d{2})(\d{2})(\d{2})", v)
+        if m:
+            yy, mm, dd = m.groups()
+            if 1 <= int(mm) <= 12 and 1 <= int(dd) <= 31:
+                return f"20{yy}-{mm}-{dd}"
+    return ""
 
 
 def media_kind(url: str) -> str:
@@ -143,7 +163,7 @@ def main():
             "id": sid,
             "title": title,
             "speaker": clean_text(r.get("speaker", "")),
-            "date": (r.get("sermon_date") or r.get("uploaded") or "").strip(),
+            "date": parse_date(r.get("sermon_date"), r.get("uploaded")),
             "url": url,
             "media": media_kind(url),
         }
@@ -155,17 +175,21 @@ def main():
 
         summary = clean_text(r.get("summary", ""))
         if summary:
-            item["summary"] = summary
+            item["summary"] = summary[:700]
         for out_key, in_key in (
             ("scripture", "scripture_references"),
             ("themes", "doctrinal_themes"),
             ("topics", "topics"),
-            ("keywords", "keywords"),
-            ("seo", "seo_tags"),
         ):
             vals = split_list(r.get(in_key, ""))
             if vals:
                 item[out_key] = vals
+        # keywords + seo_tags serve the same purpose for search — merge, dedupe.
+        kw = split_list(r.get("keywords", ""))
+        seen = {k.lower() for k in kw}
+        kw += [t for t in split_list(r.get("seo_tags", "")) if t.lower() not in seen]
+        if kw:
+            item["keywords"] = kw
         for out_key, in_key in (("type", "sermon_type"), ("series", "series"), ("tone", "tone")):
             v = clean_text(r.get(in_key, ""))
             if v:
@@ -179,7 +203,9 @@ def main():
         it.pop("_raw", None)
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(items, ensure_ascii=False, indent=0), encoding="utf-8")
+    # Compact (no whitespace) — this file ships to every visitor. The full
+    # transcripts are deliberately NOT here; the source CSV is their archive.
+    OUT_PATH.write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     enriched = sum(1 for i in items if "summary" in i)
     audio = sum(1 for i in items if i["media"] == "audio")

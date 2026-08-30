@@ -2,3 +2,9 @@
 .dev.vars
 node_modules/
 *.log
+
+# Sermon source data — the ~26 MB sermon_database.csv (with full transcripts)
+# lives in Google Drive at "Work and pictures/sermon-processor/". Keep it out
+# of the repo; sermon/sermons.json is the slim derived file that ships.
+scripts/sermon_database*.csv
+sermon/transcripts*.json
