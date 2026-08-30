@@ -26,12 +26,12 @@ Repo: [github.com/albertssdev/AEwebsite](https://github.com/albertssdev/AEwebsit
 - `assets/` — CSS, JS, images
 - `src/index.js` — Worker: handles the `www` redirect and the password gate
 - `gate.html` — password page for gated links
-- `LCRCC/`, `sermons/`, `hive.html` — unrelated pages sharing this Worker.
+- `LCRCC/`, `sermon/`, `hive.html` — unrelated pages sharing this Worker.
   `LCRCC/` backs the separate **lcrccmissouri.org** site (hostname-routed in
   `src/index.js`); `albertselectric.net/LCRCC/*` 301-redirects there.
-  `hive.html` is password-gated. `sermons/` is public, served at `/sermons`
-  (`/sermon-search/*` 301-redirects to it). All are `noindex,nofollow` so none
-  of it affects the business site's SEO.
+  `hive.html` is password-gated. `sermon/` is public, served at `/sermon`
+  (`/sermon-search/*` and `/sermons/*` 301-redirect to it). All are
+  `noindex,nofollow` so none of it affects the business site's SEO.
 - `assets/js/reviews.js` — fetches `/api/reviews` (a Worker route backed by
   Google's Places API, cached in KV) and renders the homepage reviews section
 

@@ -204,7 +204,7 @@ function dedupeConsecutiveFirstNames(reviews) {
 }
 
 // Reused for both visit tracking and CSP scoping — these are the four public
-// business pages. The gate, hive, and /sermons/ pages elsewhere on this domain
+// business pages. The gate, hive, and /sermon/ pages elsewhere on this domain
 // rely on inline scripts and third-party CDNs (Tailwind, fuse.js) a strict CSP
 // would break; hive is password-gated and the sermon pages are noindex, so a
 // site-wide policy isn't worth the trade-off. lcrccmissouri.org's pages get
@@ -513,10 +513,13 @@ export default {
       return Response.redirect(aboutUrl.toString(), 301);
     }
 
-    if (url.pathname === "/sermon-search" || url.pathname.startsWith("/sermon-search/")) {
-      // Sermon pages moved from /sermon-search/ to /sermons/ — redirect old
-      // bookmarks (the footer links that used to point here are gone).
-      return Response.redirect(new URL("/sermons/", url).toString(), 301);
+    if (
+      url.pathname === "/sermon-search" || url.pathname.startsWith("/sermon-search/") ||
+      url.pathname === "/sermons" || url.pathname.startsWith("/sermons/")
+    ) {
+      // Sermon pages live at /sermon/ now (was /sermon-search/, briefly /sermons/).
+      // Redirect the old paths so any stray bookmarks keep working.
+      return Response.redirect(new URL("/sermon/", url).toString(), 301);
     }
 
     if (url.pathname === "/api/reviews" && request.method === "GET") {
