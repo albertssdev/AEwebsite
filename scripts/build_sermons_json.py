@@ -152,6 +152,9 @@ def main():
         sid = (r.get("sermon_id") or "").strip()
         if not sid:
             continue
+        # "disabled" rows are withheld from the site entirely (not even a stub).
+        if (r.get("manual_verification") or "").strip().lower() == "disabled":
+            continue
         if sid in by_id and richness(r) <= richness(by_id[sid]["_raw"]):
             continue
 
@@ -217,6 +220,7 @@ def main():
 
     enriched = sum(1 for i in items if "summary" in i)
     rejected = sum(1 for r in rows if (r.get("manual_verification") or "").strip().lower() == "reject")
+    disabled = sum(1 for r in rows if (r.get("manual_verification") or "").strip().lower() == "disabled")
     audio = sum(1 for i in items if i["media"] == "audio")
     video = sum(1 for i in items if i["media"] == "video")
     other = sum(1 for i in items if i["media"] == "other")
@@ -225,6 +229,7 @@ def main():
     print(f"output : {OUT_PATH}  ({size_kb:,.0f} KB)")
     print(f"sermons: {len(items)}   enriched (has summary): {enriched}   stubs: {len(items) - enriched}  "
           f"(incl. {rejected} manual_verification=reject shipped as stubs)")
+    print(f"         {disabled} rows withheld (manual_verification=disabled)")
     print(f"media  : {audio} audio, {video} video, {other} other")
     if other:
         print("  note: 'other' media rows have a URL that's neither an .mp3 nor YouTube — check them.")
