@@ -33,6 +33,7 @@ const LCRCC_ALIAS_HOSTNAMES = new Set([
 // hard to reverse and nobody's asked for that yet.
 const SECURITY_HEADERS = {
   "X-Frame-Options": "SAMEORIGIN",
+  "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
@@ -693,7 +694,13 @@ export default {
     if (isLcrccDomain && assetResponse.status === 404) {
       const notFoundRequest = new Request(new URL("/LCRCC/404-lcrcc.html", request.url), request);
       const lcrccNotFound = await env.ASSETS.fetch(notFoundRequest);
-      assetResponse = new Response(lcrccNotFound.body, { status: 404, headers: lcrccNotFound.headers });
+      // The body arrives here already decompressed by the runtime, but
+      // copying Content-Encoding/Content-Length verbatim tells the client
+      // it's still compressed - it then fails to decode and shows nothing.
+      const headers = new Headers(lcrccNotFound.headers);
+      headers.delete("content-encoding");
+      headers.delete("content-length");
+      assetResponse = new Response(lcrccNotFound.body, { status: 404, headers });
     }
 
     // Safety net for any other assets-binding redirect (e.g. someone linking
