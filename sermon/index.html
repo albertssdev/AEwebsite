@@ -12,12 +12,23 @@
         .idx-header { background:#1e3a8a; }
         .idx-header a { color:#dbeafe; }
         .idx-header a:hover { color:#fff; }
+
+        /* search results, Google style */
+        #results a.g-title { color:#1a0dab; }
+        #results a.g-title:visited { color:#681da8; }
+        #results a.g-title:hover { text-decoration:underline; }
+        #results .g-src { color:#202124; }
+        #results .g-snip {
+            color:#4d5156;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+        }
+        #results .g-date { color:#70757a; }
     </style>
 </head>
 <body class="bg-gray-100">
 
     <header class="idx-header text-white py-6 shadow-lg">
-        <div class="max-w-4xl mx-auto px-6">
+        <div class="max-w-3xl mx-auto px-6">
             <div class="flex items-center justify-between mb-3">
                 <a href="https://thefaithoncedelivered.info" rel="noopener"
                    class="inline-flex items-center font-medium">
@@ -34,7 +45,7 @@
         </div>
     </header>
 
-    <div class="max-w-4xl mx-auto mt-8 px-6">
+    <div class="max-w-3xl mx-auto mt-8 px-6">
 
         <p class="mb-4">Search sermons by title, speaker, scripture, topic, or keyword</p>
 
@@ -67,8 +78,8 @@
             </select>
         </div>
 
-        <p id="count" class="text-sm text-gray-500 mb-3"></p>
-        <div id="results" class="space-y-3"></div>
+        <p id="count" class="text-sm text-gray-500 mb-4"></p>
+        <div id="results" class="space-y-7"></div>
         <div id="loading" class="hidden text-center my-4">
             Loading more sermons...
         </div>

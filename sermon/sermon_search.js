@@ -9,9 +9,10 @@
 //               sermons about grace that don't use those exact words
 //
 // The page works on literal + fuzzy immediately; semantic results fold in once
-// the model has loaded. Layout and colours match the original Sermon Search
-// page. Full transcripts aren't in the data (too large to ship) — the summary,
-// scripture and keyword fields carry the searchable content drawn from them.
+// the model has loaded. Results are laid out like a search engine (source line,
+// blue title link, keyword snippet). Full transcripts aren't in the data (too
+// large to ship) — the summary, scripture and keyword fields carry the
+// searchable content drawn from them.
 
 document.addEventListener("DOMContentLoaded", async function () {
   const searchInput = document.getElementById("searchInput");
@@ -311,13 +312,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     return a;
   }
 
-  // ---- render (original layout / colours) --------------------------
+  // ---- render (Google-style results) ------------------------------
+  let hlTerms = [];   // query words to bold in the keyword line
+
   function fmtDate(d) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || "");
     if (!m) return "";
     const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m[2] - 1];
     return `${mon} ${+m[3]}, ${m[1]}`;
   }
+
+  function appendHighlighted(parent, text, terms) {
+    if (!terms.length) { parent.appendChild(document.createTextNode(text)); return; }
+    const re = new RegExp("(" + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "gi");
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const b = document.createElement("b");
+      b.textContent = m[0];
+      parent.appendChild(b);
+      last = m.index + m[0].length;
+      if (re.lastIndex === m.index) re.lastIndex++;
+    }
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+  }
+
+  function sourceName(s) {
+    return s.media === "video" ? "YouTube"
+      : s.media === "audio" ? "thefaithoncedelivered.info" : "";
+  }
+
   function paint(append) {
     if (!append) { resultsDiv.innerHTML = ""; displayed = 0; }
     if (!currentList.length && !displayed) {
@@ -328,28 +352,38 @@ document.addEventListener("DOMContentLoaded", async function () {
     const end = Math.min(displayed + ITEMS_PER_LOAD, currentList.length);
     for (let i = displayed; i < end; i++) {
       const s = currentList[i];
-      const card = document.createElement(s.url ? "a" : "div");
-      card.className = "block border-2 border-black p-2 rounded-lg shadow bg-white" +
-        (s.url ? " hover:bg-gray-100 hover:shadow-lg" : "");
-      if (s.url) {
-        card.href = encodeURI(s.url);
-        card.target = "_blank"; card.rel = "noopener noreferrer";
+      const item = document.createElement("div");
+
+      const src = [s.speaker, sourceName(s)].filter(Boolean).join(" · ");
+      if (src) {
+        const srcDiv = document.createElement("div");
+        srcDiv.className = "g-src text-sm";
+        srcDiv.textContent = src;
+        item.appendChild(srcDiv);
       }
 
-      const titleP = document.createElement("p");
-      titleP.className = "text-base font-bold";
-      titleP.textContent = s.title || "N/A";
-      card.appendChild(titleP);
+      const title = document.createElement(s.url ? "a" : "span");
+      title.className = "g-title text-xl leading-snug";
+      if (s.url) { title.href = encodeURI(s.url); title.target = "_blank"; title.rel = "noopener noreferrer"; }
+      title.textContent = s.title || "N/A";
+      item.appendChild(title);
 
-      const meta = [s.speaker, fmtDate(s.date)].filter(Boolean).join("  ");
-      if (meta) {
-        const metaP = document.createElement("p");
-        metaP.className = "text-base";
-        metaP.textContent = "by: " + meta;
-        card.appendChild(metaP);
+      const kw = Array.isArray(s.keywords) ? s.keywords.join(", ") : "";
+      if (kw || s.date) {
+        const snip = document.createElement("div");
+        snip.className = "g-snip text-sm mt-1";
+        const d = fmtDate(s.date);
+        if (d) {
+          const ds = document.createElement("span");
+          ds.className = "g-date";
+          ds.textContent = d + (kw ? " — " : "");
+          snip.appendChild(ds);
+        }
+        if (kw) appendHighlighted(snip, kw, hlTerms);
+        item.appendChild(snip);
       }
 
-      resultsDiv.appendChild(card);
+      resultsDiv.appendChild(item);
     }
     displayed = end;
     loadingDiv.classList.toggle("hidden", displayed >= currentList.length);
@@ -358,6 +392,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   async function render() {
     const raw = searchInput.value.trim();
     const qv = raw ? await ensureQueryVec(raw.toLowerCase()) : null;
+
+    hlTerms = raw
+      ? raw.toLowerCase().split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w))
+      : [];
 
     let list = raw ? (rankedForQuery(raw.toLowerCase(), qv) || []) : sermons.slice();
 
