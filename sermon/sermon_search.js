@@ -318,12 +318,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m[2] - 1];
     return `${mon} ${+m[3]}, ${m[1]}`;
   }
-  function fmtDur(sec) {
-    if (!sec) return "";
-    const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
-    return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m} min`;
-  }
-
   function paint(append) {
     if (!append) { resultsDiv.innerHTML = ""; displayed = 0; }
     if (!currentList.length && !displayed) {
@@ -334,32 +328,28 @@ document.addEventListener("DOMContentLoaded", async function () {
     const end = Math.min(displayed + ITEMS_PER_LOAD, currentList.length);
     for (let i = displayed; i < end; i++) {
       const s = currentList[i];
-      const div = document.createElement("div");
-      div.className = "border-2 border-black p-2 rounded-lg shadow bg-white";
-
-      const p = document.createElement("p");
-      p.className = "text-base";
-
-      const titleSpan = document.createElement("span");
-      titleSpan.className = "font-bold text-blue-500 underline";
+      const card = document.createElement(s.url ? "a" : "div");
+      card.className = "block border-2 border-black p-2 rounded-lg shadow bg-white" +
+        (s.url ? " hover:bg-gray-100 hover:shadow-lg" : "");
       if (s.url) {
-        const a = document.createElement("a");
-        a.href = encodeURI(s.url);
-        a.target = "_blank"; a.rel = "noopener noreferrer";
-        a.textContent = s.title || "N/A";
-        titleSpan.appendChild(a);
-      } else {
-        titleSpan.textContent = s.title || "N/A";
+        card.href = encodeURI(s.url);
+        card.target = "_blank"; card.rel = "noopener noreferrer";
       }
-      p.appendChild(titleSpan);
 
-      const rest = [s.speaker, fmtDate(s.date), fmtDur(s.dur)].filter(Boolean).join("  ");
-      const restSpan = document.createElement("span");
-      restSpan.textContent = rest ? "  by: " + rest : "";
-      p.appendChild(restSpan);
+      const titleP = document.createElement("p");
+      titleP.className = "text-base font-bold";
+      titleP.textContent = s.title || "N/A";
+      card.appendChild(titleP);
 
-      div.appendChild(p);
-      resultsDiv.appendChild(div);
+      const meta = [s.speaker, fmtDate(s.date)].filter(Boolean).join("  ");
+      if (meta) {
+        const metaP = document.createElement("p");
+        metaP.className = "text-base";
+        metaP.textContent = "by: " + meta;
+        card.appendChild(metaP);
+      }
+
+      resultsDiv.appendChild(card);
     }
     displayed = end;
     loadingDiv.classList.toggle("hidden", displayed >= currentList.length);
