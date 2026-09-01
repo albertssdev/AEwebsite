@@ -7,23 +7,35 @@
     <title>Sermon Search</title>
     <script src="sermon_search.js" defer></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* match the Sermon Index page header (Tailwind v3 blue-900 / blue-100) */
+        .idx-header { background:#1e3a8a; }
+        .idx-header a { color:#dbeafe; }
+        .idx-header a:hover { color:#fff; }
+    </style>
 </head>
 <body class="bg-gray-100">
+
+    <header class="idx-header text-white py-6 shadow-lg">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex items-center justify-between mb-3">
+                <a href="https://thefaithoncedelivered.info" rel="noopener"
+                   class="inline-flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                         class="w-5 h-5 mr-2" aria-hidden="true">
+                        <path d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-3v-4H8v4H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" />
+                    </svg>
+                    The Faith Once Delivered
+                </a>
+                <a href="sermon-index.html"
+                   class="flex-shrink-0 font-medium hover:underline whitespace-nowrap">Sermon Index &rarr;</a>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Sermon Search</h1>
+        </div>
+    </header>
+
     <div class="max-w-4xl mx-auto mt-8 px-6">
 
-        <div class="flex items-center justify-between mb-4">
-            <a href="https://thefaithoncedelivered.info" rel="noopener"
-               class="inline-flex items-center font-medium text-gray-700 hover:text-black">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                     class="w-5 h-5 mr-1" aria-hidden="true">
-                    <path d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-3v-4H8v4H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" />
-                </svg>
-                The Faith Once Delivered
-            </a>
-            <a href="sermon-index.html" class="text-blue-500 underline font-medium whitespace-nowrap">Sermon Index &rarr;</a>
-        </div>
-
-        <h1 class="text-3xl font-bold mb-4">Sermon Search</h1>
         <p class="mb-4">Search sermons by title, speaker, scripture, topic, or keyword</p>
 
         <div class="mb-4">
