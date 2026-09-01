@@ -692,7 +692,10 @@ export default {
     // The default 404 page is Alberts Electric's - swap in the LCRCC one
     // (no phone CTA, LCRCC branding/links) for lcrccmissouri.org visitors.
     if (isLcrccDomain && assetResponse.status === 404) {
-      const notFoundRequest = new Request(new URL("/LCRCC/404-lcrcc.html", request.url), request);
+      // Fetch the extensionless clean-URL form directly - requesting the
+      // .html path here hits the assets binding's own clean-URL redirect
+      // (its 307, not the actual file), same as the "/" special-case above.
+      const notFoundRequest = new Request(new URL("/LCRCC/404-lcrcc", request.url), request);
       const lcrccNotFound = await env.ASSETS.fetch(notFoundRequest);
       // The body arrives here already decompressed by the runtime, but
       // copying Content-Encoding/Content-Length verbatim tells the client
