@@ -1,70 +1,86 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-gray-50">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex,nofollow" />
-  <title>Sermon Search</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="search.js" defer></script>
-  <style>
-    .clamp-3 { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Sermon Search</title>
+    <script src="sermon_search.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="min-h-screen">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto mt-8 px-6">
 
-    <div class="flex items-center justify-between gap-4 mb-5">
-      <a href="https://thefaithoncedelivered.info" rel="noopener"
-         class="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 font-medium">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-             class="w-5 h-5" aria-hidden="true">
-          <path d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-3v-4H8v4H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" />
-        </svg>
-        The Faith Once Delivered
-      </a>
-      <a href="sermon-index.html"
-         class="shrink-0 text-blue-700 hover:underline font-medium whitespace-nowrap">
-        Sermon Index &rarr;
-      </a>
+        <div class="flex items-center justify-between mb-4">
+            <a href="https://thefaithoncedelivered.info" rel="noopener"
+               class="inline-flex items-center font-medium text-gray-700 hover:text-black">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                     class="w-5 h-5 mr-1" aria-hidden="true">
+                    <path d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-3v-4H8v4H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" />
+                </svg>
+                The Faith Once Delivered
+            </a>
+            <a href="sermon-index.html" class="text-blue-500 underline font-medium whitespace-nowrap">Sermon Index &rarr;</a>
+        </div>
+
+        <h1 class="text-3xl font-bold mb-4">Sermon Search</h1>
+        <p class="mb-4">Search sermons by title, speaker, scripture, topic, or keyword</p>
+
+        <div class="mb-4">
+            <input id="searchInput" type="text" class="w-full border p-2 rounded" placeholder="Enter search term...">
+        </div>
+
+        <div class="mb-8 flex flex-wrap items-center">
+            <label for="speakerSelect" class="mr-2">Speaker:</label>
+            <select id="speakerSelect" class="border p-2 rounded mr-6">
+                <option value="">All</option>
+            </select>
+            <label for="mediaSelect" class="mr-2">Show:</label>
+            <select id="mediaSelect" class="border p-2 rounded mr-6">
+                <option value="">Audio &amp; video</option>
+                <option value="audio">Audio only</option>
+                <option value="video">Video only</option>
+            </select>
+            <label for="sortSelect" class="mr-2">Sort by:</label>
+            <select id="sortSelect" class="border p-2 rounded">
+                <option value="relevance">Relevance</option>
+                <option value="number-desc">Number (Newest First)</option>
+                <option value="number-asc">Number (Oldest First)</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+                <option value="speaker-asc">Speaker (A-Z)</option>
+                <option value="speaker-desc">Speaker (Z-A)</option>
+                <option value="date-desc">Date (Newest First)</option>
+                <option value="date-asc">Date (Oldest First)</option>
+            </select>
+        </div>
+
+        <p id="count" class="text-sm text-gray-500 mb-3"></p>
+        <div id="results" class="space-y-3"></div>
+        <div id="loading" class="hidden text-center my-4">
+            Loading more sermons...
+        </div>
+
     </div>
 
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Sermon Search</h1>
-      <p class="text-gray-600 mt-1">Search by title, speaker, scripture, topic, or keyword.</p>
-    </div>
-
-    <input id="searchInput" type="text" autocomplete="off"
-           class="w-full border border-gray-300 rounded-lg p-3 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-           placeholder="Try a book of the Bible, a theme, a phrase..." />
-
-    <div class="flex flex-wrap gap-3 mb-4 text-sm">
-      <select id="speakerSelect" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">All speakers</option>
-      </select>
-      <select id="mediaSelect" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">Audio &amp; video</option>
-        <option value="audio">Audio only</option>
-        <option value="video">Video only</option>
-      </select>
-      <select id="sortSelect" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="relevance">Sort: relevance</option>
-        <option value="id-desc">Newest first</option>
-        <option value="id-asc">Oldest first</option>
-        <option value="title-asc">Title (A&ndash;Z)</option>
-        <option value="speaker-asc">Speaker (A&ndash;Z)</option>
-      </select>
-    </div>
-
-    <p id="count" class="text-sm text-gray-500 mb-3"></p>
-    <p id="status" class="hidden text-red-700 py-8 text-center"></p>
-    <div id="results" class="space-y-4"></div>
-    <div class="text-center mt-6">
-      <button id="moreBtn" class="hidden border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-        Show more
-      </button>
-    </div>
-
-  </div>
+    <script type="module">
+        // Semantic search model — loads in the background. The page works on
+        // literal + fuzzy search immediately and folds in semantic results once
+        // the model finishes downloading (~23 MB, cached after the first visit).
+        window.__semantic = { ready: false, embed: null };
+        try {
+            const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2");
+            env.allowLocalModels = false;
+            const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { quantized: true });
+            window.__semantic.embed = async (text) => {
+                const out = await extractor(text, { pooling: "mean", normalize: true });
+                return Float32Array.from(out.data);
+            };
+            window.__semantic.ready = true;
+            window.dispatchEvent(new Event("semantic-ready"));
+        } catch (e) {
+            console.warn("semantic search unavailable:", e);
+        }
+    </script>
 </body>
 </html>
