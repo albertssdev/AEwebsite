@@ -25,9 +25,12 @@
         #results .g-date { color:#70757a; }
 
         /* Google-style search box (v2 CDN lacks hover/focus shadow utils) */
-        #searchInput { transition:box-shadow .15s, border-color .15s; }
-        #searchInput:hover { box-shadow:0 1px 6px rgba(32,33,36,.28); }
-        #searchInput:focus { box-shadow:0 1px 6px rgba(32,33,36,.28); border-color:transparent; }
+        #searchInput {
+            border:1px solid transparent;
+            box-shadow:0 1px 6px rgba(32,33,36,.28);
+            transition:box-shadow .15s;
+        }
+        #searchInput:hover, #searchInput:focus { box-shadow:0 3px 12px rgba(32,33,36,.38); }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -52,14 +55,14 @@
 
     <div class="max-w-3xl mx-auto mt-8 px-6">
 
-        <div class="search-wrap relative mb-4">
-            <svg class="absolute left-4 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
+        <div class="search-wrap relative mt-2 mb-5">
+            <svg class="absolute left-5 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
                  fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M21 21l-5.2-5.2m2-5.3a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input id="searchInput" type="text" autocomplete="off" spellcheck="false"
-                   class="w-full border border-gray-300 rounded-full py-3 pl-12 pr-5 text-base shadow-sm focus:outline-none"
+                   class="w-full rounded-full py-4 pl-14 pr-6 text-lg focus:outline-none"
                    placeholder="Search sermons">
         </div>
 
