@@ -339,7 +339,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   function sourceName(s) {
     return s.media === "video" ? "YouTube"
-      : s.media === "audio" ? "thefaithoncedelivered.info" : "";
+      : s.media === "audio" ? "Audio" : "";
   }
 
   function paint(append) {
