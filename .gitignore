@@ -3,6 +3,10 @@
 node_modules/
 *.log
 
+# Stray "nul" file: on Windows, shell redirects to NUL sometimes land here as a
+# real file (e.g. ffmpeg output from the transcription job). Never commit it.
+nul
+
 # Sermon source data — the ~26 MB sermon_database.csv (with full transcripts)
 # lives in Google Drive at "Work and pictures/sermon-processor/". Keep it out
 # of the repo; sermon/sermons.json is the slim derived file that ships.
