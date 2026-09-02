@@ -28,6 +28,9 @@
   "d1_databases": [
     { "binding": "LCRCC_DB", "database_name": "lcrcc_contributions", "database_id": "d8a1c719-2d83-435f-a190-9cfbabef1a06" }
   ],
+  "r2_buckets": [
+    { "binding": "SERMON_AUDIO", "bucket_name": "sermon-audio" }
+  ],
   "triggers": {
     "crons": ["0 6 * * *"]
   },

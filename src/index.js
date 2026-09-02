@@ -19,6 +19,18 @@ function isHiveApiPath(pathname) {
   return pathname.startsWith("/api/hive/");
 }
 
+// "bytes=START-END" / "bytes=START-" -> the {offset,length} shape R2 .get() wants.
+function parseRange(header) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec((header || "").trim());
+  if (!m) return undefined;
+  const start = m[1] === "" ? undefined : Number(m[1]);
+  const end = m[2] === "" ? undefined : Number(m[2]);
+  if (start === undefined && end === undefined) return undefined;
+  if (start === undefined) return { suffix: end };                 // last N bytes
+  if (end === undefined) return { offset: start };                 // from START to end
+  return { offset: start, length: end - start + 1 };
+}
+
 const LCRCC_ALIAS_HOSTNAMES = new Set([
   "www.lcrccmissouri.org",
   "lcrccmissouri.com",
@@ -521,6 +533,36 @@ export default {
       // Sermon pages live at /sermon/ now (was /sermon-search/, briefly /sermons/).
       // Redirect the old paths so any stray bookmarks keep working.
       return Response.redirect(new URL("/sermon/", url).toString(), 301);
+    }
+
+    // Sermon audio is served from R2 (bucket `sermon-audio`) so the catalog
+    // doesn't depend on any outside host. Objects are keyed by "<id>.mp3".
+    // Supports HTTP Range so the browser <audio> element can seek.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const m = url.pathname.match(/^\/sermon-audio\/([A-Za-z0-9_.-]+\.mp3)$/);
+      if (m) {
+        const key = m[1];
+        const range = request.headers.get("range");
+        const obj = range
+          ? await env.SERMON_AUDIO.get(key, { range: parseRange(range) })
+          : await env.SERMON_AUDIO.get(key);
+        if (!obj) return withSecurityHeaders(new Response("Not found", { status: 404 }));
+        const headers = new Headers();
+        obj.writeHttpMetadata(headers);
+        headers.set("etag", obj.httpEtag);
+        headers.set("accept-ranges", "bytes");
+        headers.set("cache-control", "public, max-age=31536000, immutable");
+        headers.set("content-type", "audio/mpeg");
+        if (obj.range && typeof obj.size === "number") {
+          const start = obj.range.offset ?? 0;
+          const end = start + (obj.range.length ?? obj.size - start) - 1;
+          headers.set("content-range", `bytes ${start}-${end}/${obj.size}`);
+          headers.set("content-length", String(end - start + 1));
+          return withSecurityHeaders(new Response(request.method === "HEAD" ? null : obj.body, { status: 206, headers }));
+        }
+        headers.set("content-length", String(obj.size));
+        return withSecurityHeaders(new Response(request.method === "HEAD" ? null : obj.body, { headers }));
+      }
     }
 
     if (url.pathname === "/api/reviews" && request.method === "GET") {
