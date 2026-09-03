@@ -14,15 +14,29 @@
         .idx-header a:hover { color:#fff; }
 
         /* search results, Google style */
-        #results a.g-title { color:#1a0dab; }
+        #results > div { margin-bottom:1.75rem; }
+        #results a.g-title {
+            color:#1a0dab; font-size:1.25rem; line-height:1.35;
+            display:inline-block;
+        }
         #results a.g-title:visited { color:#681da8; }
         #results a.g-title:hover { text-decoration:underline; }
-        #results .g-src { color:#202124; }
+        #results .g-src { color:#202124; font-size:.875rem; line-height:1.3; }
         #results .g-snip {
-            color:#4d5156;
+            color:#4d5156; font-size:.9rem; line-height:1.55; margin-top:.15rem;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
         }
         #results .g-date { color:#70757a; }
+
+        /* mobile: bigger type + spacing, closer to the Google app */
+        @media (max-width: 640px) {
+            .filter-row { font-size:.9375rem; }
+            #count { font-size:.9375rem; }
+            #results > div { margin-bottom:2rem; }
+            #results a.g-title { font-size:1.375rem; line-height:1.4; }
+            #results .g-src { font-size:.9375rem; }
+            #results .g-snip { font-size:1rem; line-height:1.6; -webkit-line-clamp:3; }
+        }
 
         /* prominent search box (v2 CDN lacks hover/focus shadow utils) */
         .search-wrap svg { color:#1e3a8a; }
@@ -68,7 +82,7 @@
                    placeholder="Search sermons">
         </div>
 
-        <div class="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-600
+        <div class="filter-row mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-600
                     border-b border-gray-200 pb-3">
             <label class="flex items-center gap-1" for="speakerSelect">Speaker
                 <select id="speakerSelect" class="border border-gray-300 rounded-md px-2 py-1 bg-white">
