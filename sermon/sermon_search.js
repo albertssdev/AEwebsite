@@ -383,6 +383,23 @@ document.addEventListener("DOMContentLoaded", async function () {
         item.appendChild(snip);
       }
 
+      // Audio sermons are served same-origin from R2, so we can offer a real
+      // download named after the sermon title (?dl + ?name; the `download`
+      // attr is the belt-and-suspenders fallback). Video lives on YouTube.
+      if (s.media === "audio" && s.url) {
+        const fname = (s.title || String(s.id)).trim();
+        const dl = document.createElement("a");
+        dl.className = "g-dl";
+        dl.href = s.url.split(/[?#]/)[0] + "?dl=1&name=" + encodeURIComponent(fname);
+        dl.setAttribute("download", fname + ".mp3");
+        dl.rel = "noopener";
+        dl.textContent = "Download MP3";
+        const wrap = document.createElement("div");
+        wrap.className = "g-acts mt-1";
+        wrap.appendChild(dl);
+        item.appendChild(wrap);
+      }
+
       resultsDiv.appendChild(item);
     }
     displayed = end;

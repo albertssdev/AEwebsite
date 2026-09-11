@@ -542,9 +542,14 @@ export default {
       const m = url.pathname.match(/^\/sermon-audio\/([A-Za-z0-9_.-]+\.mp3)$/);
       if (m) {
         const key = m[1];
-        const range = request.headers.get("range");
-        const obj = range
-          ? await env.SERMON_AUDIO.get(key, { range: parseRange(range) })
+        // Only treat this as a range request when the client actually sent a
+        // usable Range header. Without this guard a plain GET was answered with
+        // a 206 covering the whole file, which Safari/iOS and some download
+        // managers reject — so "download the sermon" appeared to do nothing.
+        const rangeHeader = request.headers.get("range");
+        const parsedRange = rangeHeader ? parseRange(rangeHeader) : undefined;
+        const obj = parsedRange
+          ? await env.SERMON_AUDIO.get(key, { range: parsedRange })
           : await env.SERMON_AUDIO.get(key);
         if (!obj) return withSecurityHeaders(new Response("Not found", { status: 404 }));
         const headers = new Headers();
@@ -553,7 +558,24 @@ export default {
         headers.set("accept-ranges", "bytes");
         headers.set("cache-control", "public, max-age=31536000, immutable");
         headers.set("content-type", "audio/mpeg");
-        if (obj.range && typeof obj.size === "number") {
+
+        // ?dl (or ?download) forces a Save dialog and names the file after the
+        // sermon title passed as ?name=, instead of the bare "<id>.mp3".
+        if (url.searchParams.has("dl") || url.searchParams.has("download")) {
+          const wanted = (url.searchParams.get("name") || key.replace(/\.mp3$/i, "")).trim();
+          const safe = wanted
+            .replace(/[\/\\:*?"<>|]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 120) || "sermon";
+          const ascii = safe.replace(/[^\x20-\x7e]/g, "_").replace(/"/g, "");
+          headers.set(
+            "content-disposition",
+            `attachment; filename="${ascii}.mp3"; filename*=UTF-8''${encodeURIComponent(safe + ".mp3")}`
+          );
+        }
+
+        if (parsedRange && obj.range && typeof obj.size === "number") {
           const start = obj.range.offset ?? 0;
           const end = start + (obj.range.length ?? obj.size - start) - 1;
           headers.set("content-range", `bytes ${start}-${end}/${obj.size}`);
