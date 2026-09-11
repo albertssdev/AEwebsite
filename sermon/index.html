@@ -33,11 +33,20 @@
         }
         #results .g-ref { color:#4d5156; font-size:.85rem; }
         #results .g-detail .g-acts {
-            display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+            display:flex; align-items:center; justify-content:space-between; gap:1rem;
         }
-        #results .g-detail .g-acts a { color:#1a0dab; font-size:.875rem; }
-        #results .g-detail .g-acts a:hover { text-decoration:underline; }
-        #results .g-detail .g-acts .g-dl { margin-left:auto; }
+        #results .g-detail .g-acts a {
+            display:inline-flex; align-items:center;
+            padding:.4rem .9rem; border-radius:.4rem;
+            font-size:.8125rem; font-weight:500; line-height:1;
+            border:1px solid #1e3a8a; text-decoration:none; transition:background .12s,color .12s;
+        }
+        #results .g-detail .g-acts a:hover { text-decoration:none; }
+        /* Listen = filled, Download = outlined */
+        #results .g-detail .g-acts a:not(.g-dl) { background:#1e3a8a; color:#fff; }
+        #results .g-detail .g-acts a:not(.g-dl):hover { background:#152c66; }
+        #results .g-detail .g-acts a.g-dl { margin-left:auto; background:#fff; color:#1e3a8a; }
+        #results .g-detail .g-acts a.g-dl:hover { background:#eef2ff; }
         #results .g-snip {
             color:#4d5156; font-size:.9rem; line-height:1.55; margin-top:.15rem;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
