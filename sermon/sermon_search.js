@@ -428,7 +428,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (s.media === "audio") {
           const fname = (s.title || String(s.id)).trim();
           const dl = document.createElement("a");
-          dl.className = "g-dl ml-4";
+          dl.className = "g-dl";
           dl.href = s.url.split(/[?#]/)[0] + "?dl=1&name=" + encodeURIComponent(fname);
           dl.setAttribute("download", fname + ".mp3");
           dl.rel = "noopener";
