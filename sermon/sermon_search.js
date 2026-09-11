@@ -354,6 +354,11 @@ document.addEventListener("DOMContentLoaded", async function () {
       const s = currentList[i];
       const item = document.createElement("div");
 
+      // Details panel, revealed only when the sermon is clicked.
+      const detail = document.createElement("div");
+      detail.className = "g-detail mt-2";
+      detail.hidden = true;
+
       const src = [s.speaker, sourceName(s)].filter(Boolean).join(" · ");
       if (src) {
         const srcDiv = document.createElement("div");
@@ -364,7 +369,21 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       const title = document.createElement(s.url ? "a" : "span");
       title.className = "g-title text-xl leading-snug";
-      if (s.url) { title.href = encodeURI(s.url); title.target = "_blank"; title.rel = "noopener noreferrer"; }
+      if (s.url) {
+        // Clicking a sermon expands its details inline (summary + actions)
+        // rather than jumping straight to the media. href is kept so
+        // middle-click / open-in-new-tab still works.
+        title.href = encodeURI(s.url);
+        title.rel = "noopener noreferrer";
+        title.setAttribute("aria-expanded", "false");
+        title.addEventListener("click", (e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+          e.preventDefault();
+          const open = detail.hidden;
+          detail.hidden = !open;
+          title.setAttribute("aria-expanded", String(open));
+        });
+      }
       title.textContent = s.title || "N/A";
       item.appendChild(title);
 
@@ -383,23 +402,50 @@ document.addEventListener("DOMContentLoaded", async function () {
         item.appendChild(snip);
       }
 
-      // Audio sermons are served same-origin from R2, so we can offer a real
-      // download named after the sermon title (?dl + ?name; the `download`
-      // attr is the belt-and-suspenders fallback). Video lives on YouTube.
-      if (s.media === "audio" && s.url) {
-        const fname = (s.title || String(s.id)).trim();
-        const dl = document.createElement("a");
-        dl.className = "g-dl";
-        dl.href = s.url.split(/[?#]/)[0] + "?dl=1&name=" + encodeURIComponent(fname);
-        dl.setAttribute("download", fname + ".mp3");
-        dl.rel = "noopener";
-        dl.textContent = "Download MP3";
-        const wrap = document.createElement("div");
-        wrap.className = "g-acts mt-1";
-        wrap.appendChild(dl);
-        item.appendChild(wrap);
+      // ---- details panel (hidden until the sermon is clicked) ----------
+      const sum = (s.summary || "").trim();   // already cleaned by the builder
+      if (sum) {
+        const p = document.createElement("p");
+        p.className = "g-sum text-sm";
+        p.textContent = sum;
+        detail.appendChild(p);
+      }
+      const scr = Array.isArray(s.scripture) ? s.scripture.join(", ") : "";
+      if (scr) {
+        const p = document.createElement("div");
+        p.className = "g-ref text-sm mt-1";
+        p.textContent = "Scripture: " + scr;
+        detail.appendChild(p);
       }
 
+      if (s.url) {
+        const acts = document.createElement("div");
+        acts.className = "g-acts mt-2";
+
+        const open = document.createElement("a");
+        open.href = encodeURI(s.url);
+        open.target = "_blank";
+        open.rel = "noopener noreferrer";
+        open.textContent = s.media === "video" ? "Watch on YouTube" : "Listen";
+        acts.appendChild(open);
+
+        // Audio is served same-origin from R2, so offer a real download named
+        // after the sermon title (?dl + ?name; the `download` attr is a
+        // belt-and-suspenders fallback). Video lives on YouTube.
+        if (s.media === "audio") {
+          const fname = (s.title || String(s.id)).trim();
+          const dl = document.createElement("a");
+          dl.className = "g-dl ml-4";
+          dl.href = s.url.split(/[?#]/)[0] + "?dl=1&name=" + encodeURIComponent(fname);
+          dl.setAttribute("download", fname + ".mp3");
+          dl.rel = "noopener";
+          dl.textContent = "Download MP3";
+          acts.appendChild(dl);
+        }
+        detail.appendChild(acts);
+      }
+
+      if (detail.childNodes.length) item.appendChild(detail);
       resultsDiv.appendChild(item);
     }
     displayed = end;
