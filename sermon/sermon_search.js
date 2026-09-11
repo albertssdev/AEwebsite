@@ -403,13 +403,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
 
       // ---- details panel (hidden until the sermon is clicked) ----------
-      const sum = (s.summary || "").trim();   // already cleaned by the builder
-      if (sum) {
-        const p = document.createElement("p");
-        p.className = "g-sum text-sm";
-        p.textContent = sum;
-        detail.appendChild(p);
-      }
       const scr = Array.isArray(s.scripture) ? s.scripture.join(", ") : "";
       if (scr) {
         const p = document.createElement("div");
